@@ -12,8 +12,16 @@ dapat diverifikasi publik. Tiga peran: **Muzakki** (donatur), **Amil**
 | [`backend/`](./backend)  | Node + Express + TypeScript + Stellar SDK | REST API (lembaga, tracker, verify) + skrip demo testnet |
 | [`frontend/`](./frontend) | Next.js 14 (App Router) + React + Freighter | UI Muzakki/Amil/Tracker, hooks, dan utilitas Stellar client-side |
 
-Design references (HTML): `Zakati-Landing.dc.html`, `Zakati-Dashboard.dc.html`,
-`Zakati-Amil.dc.html`, `Zakati-Tracker.dc.html`.
+### Halaman frontend
+
+| Rute            | Peran    | Fungsi                                                          |
+| --------------- | -------- | -------------------------------------------------------------- |
+| `/`             | —        | Landing page                                                   |
+| `/lembaga`      | Publik   | Browse lembaga amil + statistik on-chain mereka                |
+| `/dashboard`    | Muzakki  | Bayar zakat (alamat manual atau pilih lembaga)                 |
+| `/amil`         | Amil     | Distribusi batch ke mustahiq                                   |
+| `/mustahiq`     | Mustahiq | Dana zakat yang diterima wallet terhubung                      |
+| `/tracker`      | Publik   | Lacak transaksi alamat Stellar mana pun                        |
 
 ## Arsitektur
 

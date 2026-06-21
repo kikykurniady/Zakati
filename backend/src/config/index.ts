@@ -15,3 +15,9 @@ export const CORS_ORIGIN: string =
 
 /** True when running outside production (enables verbose logging). */
 export const IS_DEV: boolean = process.env.NODE_ENV !== 'production';
+
+/**
+ * Shared secret guarding admin-only endpoints (e.g. verifying a lembaga).
+ * When empty, those endpoints respond 503 instead of running open.
+ */
+export const ADMIN_TOKEN: string = process.env.ADMIN_TOKEN ?? '';

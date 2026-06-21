@@ -5,11 +5,9 @@
 import { Router, type Request, type Response } from 'express';
 import { fetchTransactionDetail } from '../lib/stellar/history';
 import { getErrorMessage } from '../lib/errors';
+import { isZakatiMemo } from '../lib/zakat';
 
 const router = Router();
-
-/** Memo prefixes that identify Zakati-originated transactions. */
-const ZAKATI_MEMO_PREFIXES = ['ZAKAT', 'INFAQ', 'SEDEKAH', 'ZAKATI-DIST'];
 
 /** GET /api/verify/:txHash */
 router.get('/:txHash', async (req: Request, res: Response) => {
@@ -23,12 +21,9 @@ router.get('/:txHash', async (req: Request, res: Response) => {
 
   try {
     const transaction = await fetchTransactionDetail(txHash);
-    const isZakati = ZAKATI_MEMO_PREFIXES.some((p) =>
-      transaction.memo.toUpperCase().startsWith(p),
-    );
 
     return res.json({
-      isValid: transaction.status === 'success' && isZakati,
+      isValid: transaction.status === 'success' && isZakatiMemo(transaction.memo),
       transaction,
     });
   } catch (error) {

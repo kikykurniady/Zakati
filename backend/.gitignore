@@ -13,6 +13,9 @@ dist/
 demo-accounts.json
 *.keypair.json
 
+# runtime registry (file-backed lembaga store)
+data/
+
 # logs
 *.log
 npm-debug.log*
