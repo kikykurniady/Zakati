@@ -1,0 +1,30 @@
+{
+  "name": "zakati-backend",
+  "version": "1.0.0",
+  "description": "Zakati backend — Stellar SDK utilities, REST API, and demo tooling for a transparent zakat platform on Stellar.",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "demo:setup": "ts-node scripts/setup-demo.ts",
+    "demo:fund": "ts-node scripts/setup-demo.ts --fund-only"
+  },
+  "keywords": ["stellar", "zakat", "blockchain", "usdc", "indonesia"],
+  "license": "MIT",
+  "dependencies": {
+    "@stellar/stellar-sdk": "^12.3.0",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.7.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.6.2"
+  }
+}
