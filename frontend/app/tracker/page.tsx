@@ -5,20 +5,45 @@ import { Nav } from '@/components/Nav';
 import { api, type TrackerResponse } from '@/lib/api';
 import { getAccountExplorerUrl } from '@/lib/stellar/config';
 
+/** Per-transaction verification state, keyed by txHash. */
+type VerifyState = 'pending' | 'valid' | 'invalid';
+
 /** Public transaction tracker for any Stellar address. */
 export default function TrackerPage() {
   const [address, setAddress] = useState('');
   const [data, setData] = useState<TrackerResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verified, setVerified] = useState<Record<string, VerifyState>>({});
+
+  /** Cross-check each tx against the backend verify endpoint (memo + status). */
+  const verifyAll = (txs: TrackerResponse['transactions']) => {
+    setVerified(Object.fromEntries(txs.map((tx) => [tx.txHash, 'pending'])));
+    txs.forEach((tx) => {
+      api
+        .verifyTx(tx.txHash)
+        .then((res) =>
+          setVerified((prev) => ({
+            ...prev,
+            [tx.txHash]: res.isValid ? 'valid' : 'invalid',
+          })),
+        )
+        .catch(() =>
+          setVerified((prev) => ({ ...prev, [tx.txHash]: 'invalid' })),
+        );
+    });
+  };
 
   const onSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setData(null);
+    setVerified({});
     try {
-      setData(await api.getTracker(address.trim()));
+      const result = await api.getTracker(address.trim());
+      setData(result);
+      verifyAll(result.transactions);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat data.');
     } finally {
@@ -98,8 +123,16 @@ export default function TrackerPage() {
                 {data.transactions.map((tx) => (
                   <div className="tx-row" key={tx.txHash}>
                     <div>
-                      <div className="mono">
+                      <div
+                        className="mono"
+                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                      >
                         {tx.from.slice(0, 4)}… → {tx.to.slice(0, 4)}…
+                        {verified[tx.txHash] === 'valid' && (
+                          <span className="badge-live" title="Memo & status cocok dengan transfer Zakati">
+                            <span className="dot" /> Terverifikasi Zakati
+                          </span>
+                        )}
                       </div>
                       <div className="muted" style={{ fontSize: 12 }}>
                         {tx.memo || '—'} ·{' '}
