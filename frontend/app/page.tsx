@@ -41,9 +41,15 @@ const FEATURES = [
   { icon: ICONS.shield, title: 'Freighter Wallet', gold: false, body: 'Terintegrasi dengan Freighter. Tidak ada private key yang meninggalkan device Anda.' },
 ];
 
-const STEPS = [
+const STEPS: Array<{
+  n: string;
+  icon: string;
+  title: string;
+  body: string;
+  href?: string;
+}> = [
   { n: '01', icon: ICONS.wallet, title: 'Hubungkan Freighter Wallet', body: 'Install ekstensi Freighter dan hubungkan ke Zakati. Tidak perlu daftar — wallet address Anda adalah identitas Anda.' },
-  { n: '02', icon: ICONS.eye, title: 'Pilih Lembaga Amil Terpercaya', body: 'Browse lembaga amil terverifikasi. Lihat riwayat distribusi on-chain mereka sebelum memilih.' },
+  { n: '02', icon: ICONS.eye, title: 'Pilih Lembaga Amil Terpercaya', body: 'Browse lembaga amil terverifikasi. Lihat riwayat distribusi on-chain mereka sebelum memilih.', href: '/lembaga' },
   { n: '03', icon: ICONS.send, title: 'Kirim Zakat dengan USDC', body: 'Transfer USDC via Stellar dengan fee hampir nol. Transaksi dikonfirmasi dalam 3–5 detik.' },
   { n: '04', icon: ICONS.link, title: 'Lacak Distribusi Real-Time', body: 'Lihat langsung ke siapa zakat Anda disalurkan. Setiap distribusi tercatat permanen on-chain.' },
 ];
@@ -164,6 +170,14 @@ export default function HomePage() {
                       <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>{s.title}</h3>
                     </div>
                     <p className="muted" style={{ marginBottom: 0, marginTop: 12 }}>{s.body}</p>
+                    {s.href && (
+                      <Link
+                        href={s.href}
+                        style={{ display: 'inline-block', marginTop: 12, color: 'var(--accent)' }}
+                      >
+                        Lihat lembaga →
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}

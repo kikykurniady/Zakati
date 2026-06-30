@@ -18,7 +18,9 @@ export function Nav() {
 
         <div className="nav-links">
           <Link href="/dashboard">Bayar Zakat</Link>
+          <Link href="/lembaga">Lembaga</Link>
           <Link href="/amil">Amil</Link>
+          <Link href="/mustahiq">Mustahiq</Link>
           <Link href="/tracker">Transparansi</Link>
 
           {isConnected && publicKey ? (

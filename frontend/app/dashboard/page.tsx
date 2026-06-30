@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Nav } from '@/components/Nav';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useZakatPayment } from '@/hooks/useZakatPayment';
+import { api } from '@/lib/api';
+import type { LembagaAmil } from '@/types';
 
 /** Muzakki dashboard: balances + pay zakat. */
-export default function DashboardPage() {
+function DashboardContent() {
+  const searchParams = useSearchParams();
   const { isConnected, publicKey, connectWallet } = useFreighter();
   const { account, addUSDCTrustline } = useStellarAccount(publicKey);
   const { sendZakat, status, error, txHash, explorerUrl, reset } =
@@ -17,6 +21,31 @@ export default function DashboardPage() {
   const [amount, setAmount] = useState('');
   const [asset, setAsset] = useState<'XLM' | 'USDC'>('USDC');
   const [memo, setMemo] = useState('ZAKAT-MAL-2024');
+  const [lembaga, setLembaga] = useState<LembagaAmil[]>([]);
+  const [selectedLembaga, setSelectedLembaga] = useState('');
+
+  // Prefill the destination when arriving from a lembaga detail page.
+  const prefillTo = searchParams.get('to');
+  const prefillName = searchParams.get('name');
+  useEffect(() => {
+    if (prefillTo) setToAddress(prefillTo);
+  }, [prefillTo]);
+
+  // Load institutions for the inline selector.
+  useEffect(() => {
+    api
+      .listLembaga()
+      .then((res) => setLembaga(res.lembaga.filter((l) => l.stellarAddress)))
+      .catch(() => {
+        /* selector is optional; ignore load failures */
+      });
+  }, []);
+
+  const onSelectLembaga = (id: string) => {
+    setSelectedLembaga(id);
+    const match = lembaga.find((l) => l.id === id);
+    if (match) setToAddress(match.stellarAddress);
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +110,30 @@ export default function DashboardPage() {
 
             <div className="card">
               <div className="label">Bayar Zakat</div>
+              {prefillName && (
+                <div className="alert" style={{ background: 'var(--panel-2)', marginTop: 12 }}>
+                  Tujuan: <b>{prefillName}</b>
+                </div>
+              )}
               <form onSubmit={onSubmit} style={{ marginTop: 12 }}>
+                {lembaga.length > 0 && (
+                  <div className="field">
+                    <label>Pilih lembaga (opsional)</label>
+                    <select
+                      className="select"
+                      value={selectedLembaga}
+                      onChange={(e) => onSelectLembaga(e.target.value)}
+                    >
+                      <option value="">— Masukkan alamat manual —</option>
+                      {lembaga.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.name}
+                          {l.isVerified ? ' ✓' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="field">
                   <label>Alamat Amil (tujuan)</label>
                   <input
@@ -176,5 +228,13 @@ export default function DashboardPage() {
         )}
       </main>
     </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
   );
 }

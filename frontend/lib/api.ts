@@ -24,8 +24,19 @@ export interface TrackerResponse {
   };
 }
 
+export interface LembagaDetailResponse {
+  lembaga: LembagaAmil;
+  stats: {
+    totalTerkumpul: string;
+    totalTerdistribusi: string;
+    saldo: string;
+  };
+}
+
 export const api = {
   listLembaga: () => getJson<{ lembaga: LembagaAmil[] }>('/api/lembaga'),
+  getLembaga: (id: string) =>
+    getJson<LembagaDetailResponse>(`/api/lembaga/${id}`),
   getTracker: (address: string) =>
     getJson<TrackerResponse>(`/api/tracker/${address}`),
   verifyTx: (txHash: string) =>
