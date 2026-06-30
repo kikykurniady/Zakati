@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Nav } from '@/components/Nav';
+import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useZakatPayment } from '@/hooks/useZakatPayment';
@@ -12,7 +13,7 @@ import type { LembagaAmil } from '@/types';
 /** Muzakki dashboard: balances + pay zakat. */
 function DashboardContent() {
   const searchParams = useSearchParams();
-  const { isConnected, publicKey, connectWallet } = useFreighter();
+  const { isConnected, publicKey } = useFreighter();
   const { account, addUSDCTrustline } = useStellarAccount(publicKey);
   const { sendZakat, status, error, txHash, explorerUrl, reset } =
     useZakatPayment();
@@ -67,14 +68,7 @@ function DashboardContent() {
         </h2>
 
         {!isConnected ? (
-          <div className="card card-glass" style={{ textAlign: 'center', padding: 48 }}>
-            <p className="muted" style={{ marginTop: 0 }}>
-              Hubungkan wallet Freighter untuk memulai.
-            </p>
-            <button className="btn btn-primary" onClick={() => void connectWallet()}>
-              Connect Wallet
-            </button>
-          </div>
+          <ConnectWalletCard message="Hubungkan wallet Freighter untuk memulai." />
         ) : (
           <div className="grid grid-2">
             <div className="card card-glass">
