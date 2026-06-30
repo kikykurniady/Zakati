@@ -94,6 +94,23 @@ export interface ZakatTransaction {
   stellarExpertUrl: string;
 }
 
+/**
+ * Inbound/outbound totals for a single asset at one address.
+ *
+ * Totals are always grouped by asset: summing XLM and USDC into one figure
+ * would misreport balances on a transparency report.
+ */
+export interface AssetFlow {
+  /** Asset code, e.g. "USDC" or "XLM". */
+  asset: string;
+  /** Total received (incoming), formatted to 7 decimals. */
+  masuk: string;
+  /** Total sent (outgoing), formatted to 7 decimals. */
+  keluar: string;
+  /** Net (masuk − keluar), formatted to 7 decimals. */
+  saldo: string;
+}
+
 /** A single recipient inside a distribution batch. */
 export interface DistributionRecipient {
   mustahiqId: string;

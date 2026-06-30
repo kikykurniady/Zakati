@@ -1,5 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { isZakatiMemo, truncateMemoToBytes } from './zakat';
+import {
+  aggregateFlowsByAsset,
+  flowForAsset,
+  isZakatiMemo,
+  truncateMemoToBytes,
+} from './zakat';
+import type { ZakatTransaction } from '../types';
+
+const tx = (over: Partial<ZakatTransaction>): ZakatTransaction => ({
+  txHash: 'h',
+  from: 'GFROM',
+  to: 'GTO',
+  amount: '0',
+  asset: 'USDC',
+  memo: '',
+  timestamp: '2024-01-01T00:00:00.000Z',
+  status: 'success',
+  stellarExpertUrl: '',
+  ...over,
+});
 
 describe('isZakatiMemo', () => {
   it('matches known Zakati memo prefixes (case-insensitive)', () => {
@@ -44,5 +63,45 @@ describe('truncateMemoToBytes', () => {
     const out = truncateMemoToBytes(memo, 28);
     expect(byteLen(out)).toBeLessThanOrEqual(28);
     expect(out).not.toContain('�');
+  });
+});
+
+describe('aggregateFlowsByAsset', () => {
+  const ADDR = 'GME';
+
+  it('keeps XLM and USDC totals separate instead of summing them', () => {
+    const flows = aggregateFlowsByAsset(
+      [
+        tx({ to: ADDR, amount: '100', asset: 'USDC' }),
+        tx({ to: ADDR, amount: '100', asset: 'XLM' }),
+      ],
+      ADDR,
+    );
+    expect(flows).toHaveLength(2);
+    expect(flowForAsset(flows, 'USDC').masuk).toBe('100.0000000');
+    expect(flowForAsset(flows, 'XLM').masuk).toBe('100.0000000');
+  });
+
+  it('computes per-asset saldo as masuk − keluar', () => {
+    const flows = aggregateFlowsByAsset(
+      [
+        tx({ to: ADDR, from: 'GX', amount: '500', asset: 'USDC' }),
+        tx({ from: ADDR, to: 'GY', amount: '200', asset: 'USDC' }),
+      ],
+      ADDR,
+    );
+    const usdc = flowForAsset(flows, 'USDC');
+    expect(usdc.masuk).toBe('500.0000000');
+    expect(usdc.keluar).toBe('200.0000000');
+    expect(usdc.saldo).toBe('300.0000000');
+  });
+
+  it('returns a zeroed flow for an absent asset', () => {
+    expect(flowForAsset([], 'USDC')).toEqual({
+      asset: 'USDC',
+      masuk: '0.0000000',
+      keluar: '0.0000000',
+      saldo: '0.0000000',
+    });
   });
 });
