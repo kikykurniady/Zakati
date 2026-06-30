@@ -13,6 +13,7 @@ import {
 import type { BatchDistributionInput } from '../../types';
 import { logger } from '../logger';
 import { parseHorizonError } from '../errors';
+import { truncateMemoToBytes } from '../zakat';
 import {
   BASE_FEE,
   MAX_OPERATIONS_PER_TX,
@@ -28,9 +29,13 @@ import {
 
 const CONTEXT = 'stellar/transactions';
 
-/** Trim a memo to the protocol byte limit. */
+/**
+ * Build a text memo trimmed to the protocol limit, which is 28 *bytes* (not
+ * characters). Slicing by string length would let a multibyte memo (accents,
+ * em-dashes, emoji) exceed 28 bytes and make {@link Memo.text} throw.
+ */
 function safeMemo(memo: string): Memo {
-  return Memo.text(memo.slice(0, MEMO_MAX_LENGTH));
+  return Memo.text(truncateMemoToBytes(memo, MEMO_MAX_LENGTH));
 }
 
 /**

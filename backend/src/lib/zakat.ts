@@ -16,3 +16,19 @@ export function isZakatiMemo(memo: string | null | undefined): boolean {
   const upper = memo.toUpperCase();
   return ZAKATI_MEMO_PREFIXES.some((prefix) => upper.startsWith(prefix));
 }
+
+/**
+ * Truncate a string so its UTF-8 encoding fits within `maxBytes`, dropping any
+ * trailing partial multibyte sequence.
+ *
+ * Stellar text memos are limited to 28 *bytes*, not characters; slicing by
+ * `String.prototype.slice` measures UTF-16 code units and lets multibyte input
+ * (accents, em-dashes, emoji) overflow the protocol limit.
+ */
+export function truncateMemoToBytes(memo: string, maxBytes: number): string {
+  const bytes = new TextEncoder().encode(memo);
+  if (bytes.length <= maxBytes) return memo;
+  return new TextDecoder('utf-8', { fatal: false })
+    .decode(bytes.slice(0, maxBytes))
+    .replace(/�$/, '');
+}
