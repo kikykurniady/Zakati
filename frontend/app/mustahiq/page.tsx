@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Nav } from '@/components/Nav';
+import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
 import { api, type TrackerResponse } from '@/lib/api';
 import { getAccountExplorerUrl } from '@/lib/stellar/config';
 
 /** Mustahiq dashboard: funds received on-chain for the connected wallet. */
 export default function MustahiqPage() {
-  const { isConnected, publicKey, connectWallet } = useFreighter();
+  const { isConnected, publicKey } = useFreighter();
   const [data, setData] = useState<TrackerResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,14 +42,7 @@ export default function MustahiqPage() {
         </h2>
 
         {!isConnected ? (
-          <div className="card card-glass" style={{ textAlign: 'center', padding: 48 }}>
-            <p className="muted" style={{ marginTop: 0 }}>
-              Hubungkan wallet untuk melihat dana zakat yang Anda terima.
-            </p>
-            <button className="btn btn-primary" onClick={() => void connectWallet()}>
-              Connect Wallet
-            </button>
-          </div>
+          <ConnectWalletCard message="Hubungkan wallet untuk melihat dana zakat yang Anda terima." />
         ) : (
           <>
             {error && <div className="alert alert-error">{error}</div>}

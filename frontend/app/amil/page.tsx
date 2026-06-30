@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Nav } from '@/components/Nav';
+import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useBatchDistribution } from '@/hooks/useBatchDistribution';
 import type { BatchDistributionInput } from '@/types';
@@ -14,7 +15,7 @@ interface RecipientRow {
 
 /** Amil dashboard: batch-distribute to Mustahiq. */
 export default function AmilPage() {
-  const { isConnected, publicKey, connectWallet } = useFreighter();
+  const { isConnected, publicKey } = useFreighter();
   const { distribute, preview, status, progress, results, error } =
     useBatchDistribution();
 
@@ -61,14 +62,7 @@ export default function AmilPage() {
         </h2>
 
         {!isConnected ? (
-          <div className="card card-glass" style={{ textAlign: 'center', padding: 48 }}>
-            <p className="muted" style={{ marginTop: 0 }}>
-              Hubungkan wallet Amil untuk mendistribusikan.
-            </p>
-            <button className="btn btn-primary" onClick={() => void connectWallet()}>
-              Connect Wallet
-            </button>
-          </div>
+          <ConnectWalletCard message="Hubungkan wallet Amil untuk mendistribusikan." />
         ) : (
           <div className="card">
             <div className="label">Daftar Penerima (Mustahiq)</div>
