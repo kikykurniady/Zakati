@@ -12,6 +12,7 @@ import { logger } from './lib/logger';
 import lembagaRouter from './routes/lembaga';
 import trackerRouter from './routes/tracker';
 import verifyRouter from './routes/verify';
+import zakatRouter from './routes/zakat';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/lembaga', lembagaRouter);
 app.use('/api/tracker', trackerRouter);
 app.use('/api/verify', verifyRouter);
+app.use('/api/zakat', zakatRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Endpoint tidak ditemukan.' });
