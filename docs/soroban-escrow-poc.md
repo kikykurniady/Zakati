@@ -39,13 +39,31 @@ Invarian yang ditegakkan kontrak: hanya mustahiq **terverifikasi** menerima;
 tak bisa distribusi melebihi terkumpul; hanya **amil** yang berwenang; semua
 operasi memancarkan **event** untuk audit publik.
 
+## Deployed di Stellar Testnet ✅
+PoC ini sudah **di-deploy & diverifikasi on-chain** (bukan hanya cargo test):
+
+| Item | Contract ID | Explorer |
+| --- | --- | --- |
+| Zakat Escrow | `CCXQRXVBV7TPQSUFVX2H3FE43JQRPIP4BRHPE257Y3UAGAOIE4AYURJ5` | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CCXQRXVBV7TPQSUFVX2H3FE43JQRPIP4BRHPE257Y3UAGAOIE4AYURJ5) |
+| IDR token (SAC) | `CBKXWC5GZHMAQQTGXOFFABXZITVL3OVW6Z2CIFXNWZOM6U5PYKDK3AQM` | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CBKXWC5GZHMAQQTGXOFFABXZITVL3OVW6Z2CIFXNWZOM6U5PYKDK3AQM) |
+
+Transkrip verifikasi on-chain (program `ZAKATMAL2026`):
+1. `mint` 1.000.000 IDR → muzakki → saldo muzakki `1000000`.
+2. `deposit` 1.000.000 → escrow → `balance(program)` = `1000000`.
+3. `verify_mustahiq` → `is_verified(mustahiq)` = `true`.
+4. `distribute` 400.000 → mustahiq → saldo mustahiq `400000`, sisa escrow `600000`.
+5. `distribute` ke alamat **belum diverifikasi** → ditolak kontrak: `HostError: Error(Contract, #4)` (= `Error::NotVerified`). Invarian ditegakkan on-chain. ✓
+
+Reproduksi: `stellar contract build` lalu `stellar contract deploy --wasm target/wasm32v1-none/release/zakat_escrow.wasm --source <amil> --network testnet`. Identitas dibuat dengan `stellar keys generate <name> --network testnet --fund`.
+
 ## Protokol x402
 - Tanpa `X-PAYMENT` → `402` + body `{ x402Version, accepts:[{ scheme:"soroban-escrow", network, asset, amount, payTo, extra:{currency:"IDR",decimals:0,...} }] }`.
 - Klien membayar ke escrow, ulangi dengan header `X-PAYMENT` (base64 JSON payload) → `200` + receipt + header `X-PAYMENT-RESPONSE`.
 - Lihat `backend/src/lib/x402.ts` untuk skema persis.
 
 ## Batas PoC (jujur)
-- Logika kontrak dibuktikan lewat `cargo test` (6 test, native soroban-sdk) — lulus lokal (toolchain GNU di Windows) maupun di **CI ubuntu** (job `contracts`). **Belum di-deploy**; `verifyEscrowPayment()` di backend masih **simulasi** (menerima payload yang membawa `txHash`/`proof`). Ganti dengan lookup Soroban-RPC/Horizon nyata setelah deploy.
+- Logika kontrak dibuktikan lewat `cargo test` (6 test, native soroban-sdk) — lulus lokal (toolchain GNU di Windows) maupun di **CI ubuntu** (job `contracts`) — **dan sudah di-deploy + diverifikasi on-chain di testnet** (lihat tabel di atas).
+- Sisa pekerjaan: `verifyEscrowPayment()` di backend masih **simulasi** (menerima payload ber-`txHash`/`proof`). Env `ZAKAT_ESCROW_CONTRACT_ID`/`IDR_TOKEN_CONTRACT_ID` sudah menunjuk kontrak live; tinggal mengganti badan fungsi dengan query Soroban-RPC ke kontrak tersebut.
 
 ## IDR nyata = butuh Anchor (lihat review arsitektur)
 PoC memakai token IDR mock (SAC). Untuk Rupiah fiat sungguhan, dibutuhkan

@@ -3,6 +3,10 @@
 On-chain escrow that **enforces zakat distribution rules**, so transparency is
 guaranteed by the contract instead of an off-chain memo convention.
 
+> **Deployed on Stellar Testnet:**
+> [`CCXQRXVBV7TPQSUFVX2H3FE43JQRPIP4BRHPE257Y3UAGAOIE4AYURJ5`](https://stellar.expert/explorer/testnet/contract/CCXQRXVBV7TPQSUFVX2H3FE43JQRPIP4BRHPE257Y3UAGAOIE4AYURJ5)
+> — deposit/verify/distribute exercised end-to-end; see `docs/soroban-escrow-poc.md`.
+
 Funds are held in a named program's escrow and can only leave under contract
 rules. Amounts are an IDR token (any SEP-41 / Stellar Asset Contract; integer
 rupiah).
