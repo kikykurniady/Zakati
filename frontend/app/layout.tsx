@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { FreighterProvider } from '@/context/FreighterProvider';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -45,7 +46,9 @@ export default function RootLayout({
       lang="id"
       className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <FreighterProvider>{children}</FreighterProvider>
+      </body>
     </html>
   );
 }

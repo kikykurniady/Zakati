@@ -22,7 +22,8 @@
       "@/types/*": ["types/*"],
       "@/config": ["config/index.ts"],
       "@/config/*": ["config/*"],
-      "@/components/*": ["components/*"]
+      "@/components/*": ["components/*"],
+      "@/context/*": ["context/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

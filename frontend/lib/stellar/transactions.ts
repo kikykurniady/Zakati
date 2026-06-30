@@ -24,8 +24,19 @@ import {
 
 const CONTEXT = 'stellar/transactions';
 
+/**
+ * Build a text memo trimmed to the protocol limit, which is 28 *bytes* (not
+ * characters). Slicing by string length would let a multibyte memo (accents,
+ * em-dashes, emoji) exceed 28 bytes and make {@link Memo.text} throw.
+ */
 function safeMemo(memo: string): Memo {
-  return Memo.text(memo.slice(0, MEMO_MAX_LENGTH));
+  const bytes = new TextEncoder().encode(memo);
+  if (bytes.length <= MEMO_MAX_LENGTH) return Memo.text(memo);
+  // Truncate to the byte limit, dropping any trailing partial UTF-8 sequence.
+  const truncated = new TextDecoder('utf-8', { fatal: false })
+    .decode(bytes.slice(0, MEMO_MAX_LENGTH))
+    .replace(/�$/, '');
+  return Memo.text(truncated);
 }
 
 /** Build an unsigned zakat payment transaction. */
