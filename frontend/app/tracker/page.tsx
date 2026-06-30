@@ -91,18 +91,41 @@ export default function TrackerPage() {
                 <div className="stat" style={{ color: 'var(--success)' }}>
                   {data.stats.totalMasuk}
                 </div>
+                <div className="muted" style={{ fontSize: 13 }}>USDC</div>
               </div>
               <div className="card">
                 <div className="label">Total Keluar</div>
                 <div className="stat" style={{ color: 'var(--accent)' }}>
                   {data.stats.totalKeluar}
                 </div>
+                <div className="muted" style={{ fontSize: 13 }}>USDC</div>
               </div>
               <div className="card">
                 <div className="label">Jumlah Transaksi</div>
                 <div className="stat">{data.stats.jumlahTransaksi}</div>
               </div>
             </div>
+
+            {data.stats.perAsset.length > 0 && (
+              <div className="card" style={{ marginBottom: 24 }}>
+                <div className="label">Rincian per aset</div>
+                <div style={{ marginTop: 12 }}>
+                  {data.stats.perAsset.map((flow) => (
+                    <div className="tx-row" key={flow.asset}>
+                      <div className="mono">{flow.asset}</div>
+                      <div
+                        style={{ display: 'flex', gap: 24, textAlign: 'right' }}
+                        className="mono"
+                      >
+                        <span style={{ color: 'var(--success)' }}>+{flow.masuk}</span>
+                        <span style={{ color: 'var(--accent)' }}>−{flow.keluar}</span>
+                        <span title="Saldo">= {flow.saldo}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="card">
               <div className="row">

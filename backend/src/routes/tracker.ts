@@ -5,6 +5,7 @@ import { Router, type Request, type Response } from 'express';
 import { fetchPaymentHistory } from '../lib/stellar/history';
 import { validateStellarAddress } from '../lib/stellar/account';
 import { getErrorMessage } from '../lib/errors';
+import { aggregateFlowsByAsset, flowForAsset } from '../lib/zakat';
 
 const router = Router();
 
@@ -23,20 +24,19 @@ router.get('/:address', async (req: Request, res: Response) => {
       order: 'desc',
     });
 
-    let totalMasuk = 0;
-    let totalKeluar = 0;
-    for (const tx of records) {
-      if (tx.to === address) totalMasuk += Number(tx.amount);
-      if (tx.from === address) totalKeluar += Number(tx.amount);
-    }
+    const perAsset = aggregateFlowsByAsset(records, address);
+    // Headline scalars report USDC (the asset zakat is denominated in); the
+    // full per-asset breakdown is in `perAsset`.
+    const usdc = flowForAsset(perAsset, 'USDC');
 
     return res.json({
       transactions: records,
       nextCursor,
       stats: {
-        totalMasuk: totalMasuk.toFixed(7),
-        totalKeluar: totalKeluar.toFixed(7),
-        saldo: (totalMasuk - totalKeluar).toFixed(7),
+        perAsset,
+        totalMasuk: usdc.masuk,
+        totalKeluar: usdc.keluar,
+        saldo: usdc.saldo,
         jumlahTransaksi: records.length,
       },
     });

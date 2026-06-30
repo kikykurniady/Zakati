@@ -8,7 +8,9 @@ import { Router, type Request, type Response } from 'express';
 import type { LembagaAmil } from '../types';
 import { lembagaStore } from '../lib/lembagaStore';
 import { fetchPaymentHistory } from '../lib/stellar/history';
+import { aggregateFlowsByAsset, flowForAsset } from '../lib/zakat';
 import { getErrorMessage } from '../lib/errors';
+import type { AssetFlow } from '../types';
 import { logger } from '../lib/logger';
 import { ADMIN_TOKEN } from '../config';
 
@@ -78,8 +80,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Lembaga tidak ditemukan.' });
   }
 
-  let totalTerkumpul = 0;
-  let totalTerdistribusi = 0;
+  let perAsset: AssetFlow[] = [];
 
   if (lembaga.stellarAddress) {
     try {
@@ -87,28 +88,26 @@ router.get('/:id', async (req: Request, res: Response) => {
         publicKey: lembaga.stellarAddress,
         limit: 200,
       });
-      for (const tx of records) {
-        if (tx.to === lembaga.stellarAddress) {
-          totalTerkumpul += Number(tx.amount);
-        } else if (tx.from === lembaga.stellarAddress) {
-          totalTerdistribusi += Number(tx.amount);
-        }
-      }
+      perAsset = aggregateFlowsByAsset(records, lembaga.stellarAddress);
     } catch (error) {
       logger.warn('api/lembaga', 'on-chain stats unavailable', getErrorMessage(error));
     }
   }
 
+  // Headline figures use USDC (the zakat asset); `perAsset` carries the rest.
+  const usdc = flowForAsset(perAsset, 'USDC');
+
   return res.json({
     lembaga: {
       ...lembaga,
-      totalTerkumpul: totalTerkumpul.toFixed(7),
-      totalTerdistribusi: totalTerdistribusi.toFixed(7),
+      totalTerkumpul: usdc.masuk,
+      totalTerdistribusi: usdc.keluar,
     },
     stats: {
-      totalTerkumpul: totalTerkumpul.toFixed(7),
-      totalTerdistribusi: totalTerdistribusi.toFixed(7),
-      saldo: (totalTerkumpul - totalTerdistribusi).toFixed(7),
+      perAsset,
+      totalTerkumpul: usdc.masuk,
+      totalTerdistribusi: usdc.keluar,
+      saldo: usdc.saldo,
     },
   });
 });

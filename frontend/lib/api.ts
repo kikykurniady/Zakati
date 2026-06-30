@@ -1,7 +1,7 @@
 /**
  * Thin client for the Zakati backend REST API.
  */
-import type { LembagaAmil, ZakatTransaction } from '@/types';
+import type { AssetFlow, LembagaAmil, ZakatTransaction } from '@/types';
 import { API_BASE_URL } from '@/config';
 
 async function getJson<T>(path: string): Promise<T> {
@@ -17,6 +17,9 @@ export interface TrackerResponse {
   transactions: ZakatTransaction[];
   nextCursor: string | null;
   stats: {
+    /** Per-asset breakdown (USDC, XLM, …). */
+    perAsset: AssetFlow[];
+    /** USDC totals, surfaced for convenience. */
     totalMasuk: string;
     totalKeluar: string;
     saldo: string;
@@ -27,6 +30,9 @@ export interface TrackerResponse {
 export interface LembagaDetailResponse {
   lembaga: LembagaAmil;
   stats: {
+    /** Per-asset breakdown (USDC, XLM, …). */
+    perAsset: AssetFlow[];
+    /** USDC totals, surfaced for convenience. */
     totalTerkumpul: string;
     totalTerdistribusi: string;
     saldo: string;
