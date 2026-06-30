@@ -134,7 +134,7 @@ impl ZakatEscrow {
         write_program(&env, &program, &stats);
 
         env.events()
-            .publish((symbol_short!("distribute"), program), total);
+            .publish((Symbol::new(&env, "distribute"), program), total);
         Ok(())
     }
 

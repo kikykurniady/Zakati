@@ -45,8 +45,7 @@ operasi memancarkan **event** untuk audit publik.
 - Lihat `backend/src/lib/x402.ts` untuk skema persis.
 
 ## Batas PoC (jujur)
-- Logika kontrak dibuktikan lewat `cargo test` (test harness native soroban-sdk). **Belum di-deploy**; `verifyEscrowPayment()` di backend masih **simulasi** (menerima payload yang membawa `txHash`/`proof`). Ganti dengan lookup Soroban-RPC/Horizon nyata setelah deploy.
-- Mesin pengembang saat ini tidak punya linker C, jadi `cargo test` dijalankan di **CI ubuntu** (job `contracts`), bukan lokal Windows.
+- Logika kontrak dibuktikan lewat `cargo test` (6 test, native soroban-sdk) — lulus lokal (toolchain GNU di Windows) maupun di **CI ubuntu** (job `contracts`). **Belum di-deploy**; `verifyEscrowPayment()` di backend masih **simulasi** (menerima payload yang membawa `txHash`/`proof`). Ganti dengan lookup Soroban-RPC/Horizon nyata setelah deploy.
 
 ## IDR nyata = butuh Anchor (lihat review arsitektur)
 PoC memakai token IDR mock (SAC). Untuk Rupiah fiat sungguhan, dibutuhkan

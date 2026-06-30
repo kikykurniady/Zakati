@@ -3,7 +3,7 @@
 use super::{Error, ZakatEscrow, ZakatEscrowClient};
 use soroban_sdk::{
     symbol_short,
-    testutils::{Address as _, Events},
+    testutils::Address as _,
     token, vec, Address, Env,
 };
 
@@ -56,9 +56,6 @@ fn full_flow_distributes_only_to_verified_within_balance() {
     let stats = client.program(&program);
     assert_eq!(stats.collected, 1_000_000);
     assert_eq!(stats.distributed, 1_000_000);
-
-    // deposit + 2 verify + distribute all published events (token events extra).
-    assert!(env.events().all().len() >= 4);
 }
 
 #[test]

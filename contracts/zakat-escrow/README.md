@@ -39,10 +39,14 @@ is_verified(addr) -> bool
 cargo test
 ```
 
-> Requires a working C linker. The `x86_64-pc-windows-msvc` toolchain needs the
-> **Visual Studio C++ Build Tools**; alternatively use the GNU toolchain
-> (`rustup default stable-x86_64-pc-windows-gnu` + MinGW), or just run it on
-> Linux/CI (the `contracts` GitHub Actions job does exactly this).
+> Needs a working C linker. On Linux/CI it works out of the box (the `contracts`
+> GitHub Actions job runs `cargo test`). On Windows without the Visual Studio
+> C++ Build Tools, use the **GNU toolchain**, which bundles its own linker:
+>
+> ```bash
+> rustup toolchain install stable-x86_64-pc-windows-gnu
+> cargo +stable-x86_64-pc-windows-gnu test
+> ```
 
 ## Build to WASM & deploy (next step, not part of the PoC)
 
