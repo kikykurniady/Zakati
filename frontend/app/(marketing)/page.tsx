@@ -37,7 +37,7 @@ const FEATURES = [
   { icon: ICONS.users, title: 'Distribusi Batch', gold: false, body: 'Lembaga amil mendistribusikan ke hingga 100 mustahiq dalam satu transaksi. Efisien, cepat, tercatat semua.' },
   { icon: ICONS.clock, title: 'Konfirmasi 5 Detik', gold: false, body: 'Stellar menyelesaikan transaksi dalam 3–5 detik. Mustahiq menerima dana hampir instan.' },
   { icon: ICONS.eye, title: 'Verifikasi Publik', gold: true, body: 'Siapa pun bisa memverifikasi setiap transaksi di Stellar Expert. Transparansi penuh tanpa perlu login.' },
-  { icon: ICONS.shield, title: 'Freighter Wallet', gold: false, body: 'Terintegrasi dengan Freighter. Tidak ada private key yang meninggalkan device Anda.' },
+  { icon: ICONS.shield, title: 'Multi-Wallet & Mobile', gold: false, body: 'Dukungan Freighter, xBull, Albedo, Rabet, Lobstr, hingga Hana. xBull & Albedo berbasis web sehingga jalan di browser HP. Private key tak pernah keluar dari device Anda.' },
 ];
 
 const STEPS: Array<{
@@ -47,7 +47,7 @@ const STEPS: Array<{
   body: string;
   href?: string;
 }> = [
-  { n: '01', icon: ICONS.wallet, title: 'Hubungkan Freighter Wallet', body: 'Install ekstensi Freighter dan hubungkan ke Zakati. Tidak perlu daftar — wallet address Anda adalah identitas Anda.' },
+  { n: '01', icon: ICONS.wallet, title: 'Hubungkan Wallet Stellar', body: 'Pilih wallet Anda — Freighter, xBull, Albedo, dan lainnya, termasuk yang jalan di HP. Tidak perlu daftar — wallet address Anda adalah identitas Anda.' },
   { n: '02', icon: ICONS.eye, title: 'Pilih Lembaga Amil Terpercaya', body: 'Browse lembaga amil terverifikasi. Lihat riwayat distribusi on-chain mereka sebelum memilih.', href: '/lembaga' },
   { n: '03', icon: ICONS.send, title: 'Kirim Zakat dengan USDC', body: 'Transfer USDC via Stellar dengan fee hampir nol. Transaksi dikonfirmasi dalam 3–5 detik.' },
   { n: '04', icon: ICONS.link, title: 'Lacak Distribusi Real-Time', body: 'Lihat langsung ke siapa zakat Anda disalurkan. Setiap distribusi tercatat permanen on-chain.' },

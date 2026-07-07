@@ -75,7 +75,7 @@ function DashboardContent() {
         </h2>
 
         {!isConnected ? (
-          <ConnectWalletCard message="Hubungkan wallet Freighter untuk memulai." />
+          <ConnectWalletCard message="Hubungkan wallet Stellar Anda untuk memulai." />
         ) : (
           <div className="grid grid-2">
             <div className="card card-glass">
