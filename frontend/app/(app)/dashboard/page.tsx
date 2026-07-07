@@ -40,6 +40,19 @@ function DashboardContent() {
     if (prefillTo) setToAddress(prefillTo);
   }, [prefillTo]);
 
+  // Prefill type + amount when arriving from the zakat calculator.
+  const prefillJenis = searchParams.get('jenis');
+  const prefillAmount = searchParams.get('amount');
+  useEffect(() => {
+    if (prefillJenis && ZAKAT_TYPES.some((t) => t.id === prefillJenis)) {
+      setZakatTypeId(prefillJenis);
+    }
+    if (prefillAmount && Number(prefillAmount) > 0) {
+      setAmount(prefillAmount);
+      setAsset('USDC');
+    }
+  }, [prefillJenis, prefillAmount]);
+
   // Load institutions for the inline selector.
   useEffect(() => {
     api

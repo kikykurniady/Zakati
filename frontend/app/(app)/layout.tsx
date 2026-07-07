@@ -1,15 +1,15 @@
-import { AppNav } from '@/components/AppNav';
+import { Sidebar } from '@/components/Sidebar';
 
-/** Layout for the authenticated app section (dashboard, amil, mustahiq, lembaga, tracker). */
+/** Layout for the app section: fixed sidebar navigation + content area. */
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <AppNav />
-      {children}
-    </>
+    <div className="app-shell">
+      <Sidebar />
+      <div className="app-content">{children}</div>
+    </div>
   );
 }
