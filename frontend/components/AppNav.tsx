@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useFreighter } from '@/hooks/useFreighter';
 
-/** Top navigation bar with an inline Freighter connect button. */
-export function Nav() {
+/** Navigation for the authenticated app section, with an inline Freighter connect button. */
+export function AppNav() {
   const { isConnected, publicKey, isLoading, connectWallet, disconnectWallet } =
     useFreighter();
 

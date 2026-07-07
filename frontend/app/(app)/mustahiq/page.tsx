@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Nav } from '@/components/Nav';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
 import { api, type TrackerResponse } from '@/lib/api';
@@ -34,7 +33,6 @@ export default function MustahiqPage() {
 
   return (
     <>
-      <Nav />
       <main className="container" style={{ padding: '56px 24px 80px' }}>
         <div className="eyebrow">DASHBOARD MUSTAHIQ</div>
         <h2 className="section" style={{ marginTop: 10, marginBottom: 28 }}>

@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Nav } from '@/components/Nav';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
@@ -69,7 +68,6 @@ function DashboardContent() {
 
   return (
     <>
-      <Nav />
       <main className="container" style={{ padding: '56px 24px 80px' }}>
         <div className="eyebrow">DASHBOARD MUZAKKI</div>
         <h2 className="section" style={{ marginTop: 10, marginBottom: 28 }}>

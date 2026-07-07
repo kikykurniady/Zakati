@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Nav } from '@/components/Nav';
 
 /** Minimal inline icon set (avoids an extra dependency). */
 function Icon({ path, className }: { path: string; className?: string }) {
@@ -58,7 +57,6 @@ const STEPS: Array<{
 export default function HomePage() {
   return (
     <>
-      <Nav />
       <main>
         {/* ── HERO ───────────────────────────── */}
         <section className="hero">

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Nav } from '@/components/Nav';
 import { api } from '@/lib/api';
 import type { LembagaAmil } from '@/types';
 
@@ -24,7 +23,6 @@ export default function LembagaListPage() {
 
   return (
     <>
-      <Nav />
       <main className="container" style={{ padding: '56px 24px 80px' }}>
         <div className="eyebrow">LEMBAGA AMIL</div>
         <h2 className="section" style={{ marginTop: 10, marginBottom: 8 }}>

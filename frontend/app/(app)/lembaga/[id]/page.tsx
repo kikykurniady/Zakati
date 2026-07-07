@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Nav } from '@/components/Nav';
 import { api, type LembagaDetailResponse } from '@/lib/api';
 import { getAccountExplorerUrl } from '@/lib/stellar/config';
 
@@ -38,7 +37,6 @@ export default function LembagaDetailPage() {
 
   return (
     <>
-      <Nav />
       <main className="container" style={{ padding: '56px 24px 80px' }}>
         {loading && <p className="muted">Memuat…</p>}
         {error && <div className="alert alert-error">{error}</div>}

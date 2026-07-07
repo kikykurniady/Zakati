@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Nav } from '@/components/Nav';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useBatchDistribution } from '@/hooks/useBatchDistribution';
@@ -54,7 +53,6 @@ export default function AmilPage() {
 
   return (
     <>
-      <Nav />
       <main className="container" style={{ padding: '56px 24px 80px' }}>
         <div className="eyebrow">DASHBOARD AMIL</div>
         <h2 className="section" style={{ marginTop: 10, marginBottom: 28 }}>
