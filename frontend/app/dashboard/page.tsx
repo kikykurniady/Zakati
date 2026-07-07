@@ -8,6 +8,11 @@ import { useFreighter } from '@/hooks/useFreighter';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useZakatPayment } from '@/hooks/useZakatPayment';
 import { api } from '@/lib/api';
+import {
+  CUSTOM_ZAKAT_TYPE_ID,
+  ZAKAT_TYPES,
+  memoForZakatType,
+} from '@/lib/zakatTypes';
 import type { LembagaAmil } from '@/types';
 
 /** Muzakki dashboard: balances + pay zakat. */
@@ -21,7 +26,11 @@ function DashboardContent() {
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [asset, setAsset] = useState<'XLM' | 'USDC'>('USDC');
-  const [memo, setMemo] = useState('ZAKAT-MAL-2024');
+  const [zakatTypeId, setZakatTypeId] = useState(ZAKAT_TYPES[0].id);
+  const [customMemo, setCustomMemo] = useState('');
+
+  const selectedType = ZAKAT_TYPES.find((t) => t.id === zakatTypeId) ?? null;
+  const memo = selectedType ? memoForZakatType(selectedType) : customMemo;
   const [lembaga, setLembaga] = useState<LembagaAmil[]>([]);
   const [selectedLembaga, setSelectedLembaga] = useState('');
 
@@ -162,13 +171,36 @@ function DashboardContent() {
                   </select>
                 </div>
                 <div className="field">
-                  <label>Memo (jenis zakat)</label>
-                  <input
-                    className="input"
-                    value={memo}
-                    onChange={(e) => setMemo(e.target.value)}
-                    maxLength={28}
-                  />
+                  <label>Jenis pembayaran</label>
+                  <select
+                    className="select"
+                    value={zakatTypeId}
+                    onChange={(e) => setZakatTypeId(e.target.value)}
+                  >
+                    {ZAKAT_TYPES.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                    <option value={CUSTOM_ZAKAT_TYPE_ID}>Lainnya (memo bebas)</option>
+                  </select>
+                  {selectedType ? (
+                    <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+                      {selectedType.description}
+                      <br />
+                      Memo on-chain: <span className="mono">{memo}</span>
+                    </div>
+                  ) : (
+                    <input
+                      className="input"
+                      style={{ marginTop: 8 }}
+                      value={customMemo}
+                      onChange={(e) => setCustomMemo(e.target.value)}
+                      placeholder="Memo (maks. 28 byte)"
+                      maxLength={28}
+                      required
+                    />
+                  )}
                 </div>
 
                 <div
