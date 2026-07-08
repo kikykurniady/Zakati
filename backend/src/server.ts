@@ -7,7 +7,7 @@
  */
 import cors from 'cors';
 import express, { type Request, type Response } from 'express';
-import { CORS_ORIGIN, PORT } from './config';
+import { CORS_ORIGINS, IS_DEV, PORT } from './config';
 import { logger } from './lib/logger';
 import hargaRouter from './routes/harga';
 import lembagaRouter from './routes/lembaga';
@@ -17,7 +17,23 @@ import zakatRouter from './routes/zakat';
 
 const app = express();
 
-app.use(cors({ origin: CORS_ORIGIN }));
+// In development, any localhost/127.0.0.1 origin is allowed so the frontend
+// still works when Next.js falls back to another port (3001, …). Production
+// stays locked to the configured origin list.
+const isLocalOrigin = (origin: string) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Non-browser callers (curl, server-to-server) send no Origin header.
+      if (!origin || CORS_ORIGINS.includes(origin) || (IS_DEV && isLocalOrigin(origin))) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${origin} tidak diizinkan.`));
+    },
+  }),
+);
 app.use(express.json());
 
 app.get('/health', (_req: Request, res: Response) => {

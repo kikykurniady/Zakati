@@ -9,9 +9,13 @@ dotenv.config();
 /** HTTP port the Express server listens on. */
 export const PORT: number = parseInt(process.env.PORT ?? '4000', 10);
 
-/** Allowed CORS origin (the frontend dev server by default). */
-export const CORS_ORIGIN: string =
-  process.env.CORS_ORIGIN ?? 'http://localhost:3000';
+/** Allowed CORS origins: comma-separated env list (the frontend dev server by default). */
+export const CORS_ORIGINS: string[] = (
+  process.env.CORS_ORIGIN ?? 'http://localhost:3000'
+)
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 /** True when running outside production (enables verbose logging). */
 export const IS_DEV: boolean = process.env.NODE_ENV !== 'production';
