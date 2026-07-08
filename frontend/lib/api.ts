@@ -39,7 +39,20 @@ export interface LembagaDetailResponse {
   };
 }
 
+export interface HargaResponse {
+  /** Harga emas murni per gram (IDR), dari spot dunia. */
+  hargaEmasPerGram: number;
+  hargaEmasUsdPerOz: number;
+  /** Kurs 1 USD dalam IDR. */
+  kursUsdIdr: number;
+  updatedAt: string;
+  sumber: string[];
+  /** True bila snapshot lama disajikan karena upstream sedang gagal. */
+  stale: boolean;
+}
+
 export const api = {
+  getHarga: () => getJson<HargaResponse>('/api/harga'),
   listLembaga: () => getJson<{ lembaga: LembagaAmil[] }>('/api/lembaga'),
   getLembaga: (id: string) =>
     getJson<LembagaDetailResponse>(`/api/lembaga/${id}`),

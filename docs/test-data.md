@@ -34,6 +34,11 @@ GA4ZQWRINCR4XRFT4NQPPSWOEDN7QBGUE4BPN6QB2JGCJUD4CUVB4L67
 
 ## 3. Matriks uji Kalkulator (`/kalkulator`)
 
+> Kalkulator kini memuat harga emas & kurs **real-time** dari `/api/harga`
+> saat halaman dibuka (nilai di bawah hanya berlaku bila backend mati atau
+> setelah kamu menimpa field secara manual). Untuk hasil yang persis sama
+> dengan tabel, isi manual parameter berikut.
+
 Parameter default: emas Rp1.900.000/gr · beras Rp18.000/kg · kurs Rp16.500/USDC.
 Nisab tahunan = 85 × 1.900.000 = **Rp161.500.000**; nisab penghasilan/bulan =
 **Rp13.458.333**.

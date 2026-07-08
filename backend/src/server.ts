@@ -9,6 +9,7 @@ import cors from 'cors';
 import express, { type Request, type Response } from 'express';
 import { CORS_ORIGIN, PORT } from './config';
 import { logger } from './lib/logger';
+import hargaRouter from './routes/harga';
 import lembagaRouter from './routes/lembaga';
 import trackerRouter from './routes/tracker';
 import verifyRouter from './routes/verify';
@@ -23,6 +24,7 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'zakati-backend' });
 });
 
+app.use('/api/harga', hargaRouter);
 app.use('/api/lembaga', lembagaRouter);
 app.use('/api/tracker', trackerRouter);
 app.use('/api/verify', verifyRouter);

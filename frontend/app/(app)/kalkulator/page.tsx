@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
 import {
   DEFAULT_PARAMS,
   NISAB_EMAS_GRAM,
@@ -52,13 +53,34 @@ function NumField({ label, value, onChange, suffix }: {
 
 const num = (s: string) => (s === '' ? 0 : Number(s));
 
+type HargaStatus =
+  | { state: 'loading' }
+  | { state: 'live'; updatedAt: string; stale: boolean }
+  | { state: 'manual' };
+
 export default function KalkulatorPage() {
   const [tab, setTab] = useState<CalcType>('penghasilan');
 
-  // Parameter acuan — bisa diubah, selalu terlihat.
+  // Parameter acuan — dimuat real-time dari backend, tetap bisa diubah manual.
   const [hargaEmas, setHargaEmas] = useState(String(DEFAULT_PARAMS.hargaEmas));
   const [hargaBeras, setHargaBeras] = useState(String(DEFAULT_PARAMS.hargaBeras));
   const [kursUsdc, setKursUsdc] = useState(String(DEFAULT_PARAMS.kursUsdc));
+  const [hargaStatus, setHargaStatus] = useState<HargaStatus>({ state: 'loading' });
+
+  const muatHarga = () => {
+    setHargaStatus({ state: 'loading' });
+    api
+      .getHarga()
+      .then((h) => {
+        setHargaEmas(String(h.hargaEmasPerGram));
+        setKursUsdc(String(h.kursUsdIdr));
+        setHargaStatus({ state: 'live', updatedAt: h.updatedAt, stale: h.stale });
+      })
+      .catch(() => setHargaStatus({ state: 'manual' }));
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(muatHarga, []);
+
   const params: CalcParams = {
     hargaEmas: num(hargaEmas),
     hargaBeras: num(hargaBeras),
@@ -165,7 +187,30 @@ export default function KalkulatorPage() {
           </div>
 
           <div className="card" style={{ marginTop: 16 }}>
-            <div className="label">Nilai acuan (bisa diubah)</div>
+            <div className="row">
+              <div className="label">Nilai acuan (bisa diubah)</div>
+              <button
+                type="button"
+                className="calc-tab"
+                onClick={muatHarga}
+                disabled={hargaStatus.state === 'loading'}
+              >
+                {hargaStatus.state === 'loading' ? 'Memuat…' : '↻ Muat ulang'}
+              </button>
+            </div>
+            {hargaStatus.state === 'live' && (
+              <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>
+                ● Harga real-time{hargaStatus.stale ? ' (snapshot terakhir)' : ''} —
+                emas spot dunia &amp; kurs USD/IDR, diperbarui{' '}
+                {new Date(hargaStatus.updatedAt).toLocaleTimeString('id-ID')}.
+              </p>
+            )}
+            {hargaStatus.state === 'manual' && (
+              <p className="muted" style={{ fontSize: 12, margin: '8px 0 0' }}>
+                Harga real-time tidak tersedia (backend mati?) — memakai nilai
+                default, silakan sesuaikan manual.
+              </p>
+            )}
             <div style={{ marginTop: 12 }}>
               <NumField label="Harga emas per gram" suffix="Rp" value={hargaEmas} onChange={setHargaEmas} />
               {tab === 'fitrah' && (
