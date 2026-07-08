@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
+import { RiwayatZakat } from '@/components/RiwayatZakat';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useZakatPayment } from '@/hooks/useZakatPayment';
@@ -263,6 +264,8 @@ function DashboardContent() {
             </div>
           </div>
         )}
+
+        {isConnected && publicKey && <RiwayatZakat publicKey={publicKey} />}
       </main>
     </>
   );

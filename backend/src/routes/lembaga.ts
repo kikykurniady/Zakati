@@ -16,9 +16,43 @@ import { ADMIN_TOKEN } from '../config';
 
 const router = Router();
 
-/** GET /api/lembaga — list all institutions. */
-router.get('/', (_req: Request, res: Response) => {
-  res.json({ lembaga: lembagaStore.list() });
+/** Fetch live USDC in/out totals for an address; null when unavailable. */
+async function fetchUsdcTotals(
+  stellarAddress: string,
+): Promise<{ perAsset: AssetFlow[]; masuk: string; keluar: string; saldo: string } | null> {
+  try {
+    const { records } = await fetchPaymentHistory({
+      publicKey: stellarAddress,
+      limit: 200,
+    });
+    const perAsset = aggregateFlowsByAsset(records, stellarAddress);
+    const usdc = flowForAsset(perAsset, 'USDC');
+    return { perAsset, masuk: usdc.masuk, keluar: usdc.keluar, saldo: usdc.saldo };
+  } catch (error) {
+    logger.warn('api/lembaga', 'on-chain stats unavailable', getErrorMessage(error));
+    return null;
+  }
+}
+
+/**
+ * GET /api/lembaga — list all institutions, enriched with live on-chain
+ * totals so listing pages can show real progress. Falls back to the stored
+ * (stale) figures per institution when Horizon is unreachable.
+ */
+router.get('/', async (_req: Request, res: Response) => {
+  const lembaga = await Promise.all(
+    lembagaStore.list().map(async (l) => {
+      if (!l.stellarAddress) return l;
+      const totals = await fetchUsdcTotals(l.stellarAddress);
+      if (!totals) return l;
+      return {
+        ...l,
+        totalTerkumpul: totals.masuk,
+        totalTerdistribusi: totals.keluar,
+      };
+    }),
+  );
+  res.json({ lembaga });
 });
 
 /** POST /api/lembaga — register a new institution. */
@@ -80,34 +114,29 @@ router.get('/:id', async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Lembaga tidak ditemukan.' });
   }
 
-  let perAsset: AssetFlow[] = [];
-
-  if (lembaga.stellarAddress) {
-    try {
-      const { records } = await fetchPaymentHistory({
-        publicKey: lembaga.stellarAddress,
-        limit: 200,
-      });
-      perAsset = aggregateFlowsByAsset(records, lembaga.stellarAddress);
-    } catch (error) {
-      logger.warn('api/lembaga', 'on-chain stats unavailable', getErrorMessage(error));
-    }
-  }
-
   // Headline figures use USDC (the zakat asset); `perAsset` carries the rest.
-  const usdc = flowForAsset(perAsset, 'USDC');
+  const totals = lembaga.stellarAddress
+    ? await fetchUsdcTotals(lembaga.stellarAddress)
+    : null;
+  const zero = flowForAsset([], 'USDC');
+  const { perAsset, masuk, keluar, saldo } = totals ?? {
+    perAsset: [] as AssetFlow[],
+    masuk: zero.masuk,
+    keluar: zero.keluar,
+    saldo: zero.saldo,
+  };
 
   return res.json({
     lembaga: {
       ...lembaga,
-      totalTerkumpul: usdc.masuk,
-      totalTerdistribusi: usdc.keluar,
+      totalTerkumpul: masuk,
+      totalTerdistribusi: keluar,
     },
     stats: {
       perAsset,
-      totalTerkumpul: usdc.masuk,
-      totalTerdistribusi: usdc.keluar,
-      saldo: usdc.saldo,
+      totalTerkumpul: masuk,
+      totalTerdistribusi: keluar,
+      saldo,
     },
   });
 });

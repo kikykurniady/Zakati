@@ -818,3 +818,63 @@ h2.section {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ── Kartu lembaga bergaya kampanye ────────────────── */
+.lembaga-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 20px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  flex-shrink: 0;
+}
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent), var(--gold));
+  transition: width 0.4s ease;
+}
+.lembaga-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 14px;
+}
+.lembaga-stats .stat-num {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* ── Riwayat pembayaran ────────────────────────────── */
+.riwayat-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.riwayat-item:last-child {
+  border-bottom: none;
+}
+.chip-jenis {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(247, 147, 26, 0.4);
+  color: var(--accent);
+  white-space: nowrap;
+}
