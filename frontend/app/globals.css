@@ -878,3 +878,29 @@ h2.section {
   color: var(--accent);
   white-space: nowrap;
 }
+
+/* ── Bukti setor: mode cetak ───────────────────────── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .bukti-setor,
+  .bukti-setor * {
+    visibility: visible;
+  }
+  .bukti-setor {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border: 1px solid #999;
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .bukti-setor .muted,
+  .bukti-setor .mono {
+    color: #333 !important;
+  }
+  .bukti-setor .no-print {
+    display: none !important;
+  }
+}

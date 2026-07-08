@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchPaymentHistory } from '@/lib/stellar/history';
+import { useHarga, usdcToIdrLabel } from '@/hooks/useHarga';
 import { zakatTypeFromMemo } from '@/lib/zakatTypes';
 import type { ZakatTransaction } from '@/types';
 
@@ -24,6 +25,7 @@ export function RiwayatZakat({ publicKey }: { publicKey: string }) {
   const [records, setRecords] = useState<ZakatTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { kursUsdIdr } = useHarga();
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +66,11 @@ export function RiwayatZakat({ publicKey }: { publicKey: string }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600 }}>
                 {fmtJumlah(tx.amount)} {tx.asset}
+                {tx.asset === 'USDC' && usdcToIdrLabel(tx.amount, kursUsdIdr) && (
+                  <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>
+                    {' '}{usdcToIdrLabel(tx.amount, kursUsdIdr)}
+                  </span>
+                )}
               </div>
               <div className="muted mono" style={{ fontSize: 12 }}>
                 ke {tx.to.slice(0, 6)}…{tx.to.slice(-6)} · {fmtTanggal(tx.timestamp)}

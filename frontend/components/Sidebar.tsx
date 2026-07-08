@@ -24,6 +24,7 @@ const MENU_PERAN: NavItem[] = [
 
 const MENU_TRANSPARANSI: NavItem[] = [
   { href: '/tracker', label: 'Tracker Publik', icon: 'M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
+  { href: '/escrow', label: 'Escrow x402 (PoC)', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
 ];
 
 function NavIcon({ path }: { path: string }) {

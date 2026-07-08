@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useHarga, usdcToIdrLabel } from '@/hooks/useHarga';
 import type { LembagaAmil } from '@/types';
 
 const initials = (name: string) =>
@@ -33,6 +34,7 @@ export default function LembagaListPage() {
   const [lembaga, setLembaga] = useState<LembagaAmil[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { kursUsdIdr } = useHarga();
 
   useEffect(() => {
     api
@@ -91,13 +93,21 @@ export default function LembagaListPage() {
                   <div className="stat-num stat-gold">
                     {fmtUsdc(l.totalTerkumpul)} <span style={{ fontSize: 12 }}>USDC</span>
                   </div>
-                  <div className="muted" style={{ fontSize: 12 }}>Terkumpul</div>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Terkumpul{' '}
+                    {usdcToIdrLabel(l.totalTerkumpul, kursUsdIdr) &&
+                      `· ${usdcToIdrLabel(l.totalTerkumpul, kursUsdIdr)}`}
+                  </div>
                 </div>
                 <div>
                   <div className="stat-num">
                     {fmtUsdc(l.totalTerdistribusi)} <span style={{ fontSize: 12 }}>USDC</span>
                   </div>
-                  <div className="muted" style={{ fontSize: 12 }}>Tersalurkan</div>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Tersalurkan{' '}
+                    {usdcToIdrLabel(l.totalTerdistribusi, kursUsdIdr) &&
+                      `· ${usdcToIdrLabel(l.totalTerdistribusi, kursUsdIdr)}`}
+                  </div>
                 </div>
               </div>
 

@@ -2,9 +2,11 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { BuktiSetor } from '@/components/BuktiSetor';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { RiwayatZakat } from '@/components/RiwayatZakat';
 import { useFreighter } from '@/hooks/useFreighter';
+import { useHarga, usdcToIdrLabel } from '@/hooks/useHarga';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useZakatPayment } from '@/hooks/useZakatPayment';
 import { api } from '@/lib/api';
@@ -22,6 +24,7 @@ function DashboardContent() {
   const { account, addUSDCTrustline } = useStellarAccount(publicKey);
   const { sendZakat, status, error, txHash, explorerUrl, reset } =
     useZakatPayment();
+  const { kursUsdIdr, live: kursLive } = useHarga();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
@@ -170,6 +173,12 @@ function DashboardContent() {
                     onChange={(e) => setAmount(e.target.value)}
                     required
                   />
+                  {asset === 'USDC' && usdcToIdrLabel(amount, kursUsdIdr) && (
+                    <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+                      {usdcToIdrLabel(amount, kursUsdIdr)}
+                      {kursLive ? ' (kurs real-time)' : ' (kurs perkiraan)'}
+                    </div>
+                  )}
                 </div>
                 <div className="field">
                   <label>Aset</label>
@@ -263,6 +272,27 @@ function DashboardContent() {
               </form>
             </div>
           </div>
+        )}
+
+        {status === 'success' && txHash && publicKey && (
+          <BuktiSetor
+            data={{
+              txHash,
+              explorerUrl: explorerUrl ?? '#',
+              dari: publicKey,
+              kepada: toAddress,
+              namaLembaga:
+                lembaga.find((l) => l.stellarAddress === toAddress)?.name ??
+                prefillName ??
+                undefined,
+              jumlah: amount,
+              aset: asset,
+              jenisLabel: selectedType?.label ?? 'Lainnya',
+              memo,
+              tanggal: new Date(),
+              kursUsdIdr,
+            }}
+          />
         )}
 
         {isConnected && publicKey && <RiwayatZakat publicKey={publicKey} />}

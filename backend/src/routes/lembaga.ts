@@ -38,9 +38,15 @@ async function fetchUsdcTotals(
  * GET /api/lembaga — list all institutions, enriched with live on-chain
  * totals so listing pages can show real progress. Falls back to the stored
  * (stale) figures per institution when Horizon is unreachable.
+ *
+ * Enrichment hits Horizon once per institution, so results are cached
+ * briefly; a fresh payment shows up after at most CACHE_TTL_MS.
  */
-router.get('/', async (_req: Request, res: Response) => {
-  const lembaga = await Promise.all(
+const LIST_CACHE_TTL_MS = 60 * 1000;
+let listCache: { lembaga: LembagaAmil[]; at: number } | null = null;
+
+async function enrichedList(): Promise<LembagaAmil[]> {
+  return Promise.all(
     lembagaStore.list().map(async (l) => {
       if (!l.stellarAddress) return l;
       const totals = await fetchUsdcTotals(l.stellarAddress);
@@ -52,6 +58,14 @@ router.get('/', async (_req: Request, res: Response) => {
       };
     }),
   );
+}
+
+router.get('/', async (_req: Request, res: Response) => {
+  if (listCache && Date.now() - listCache.at < LIST_CACHE_TTL_MS) {
+    return res.json({ lembaga: listCache.lembaga });
+  }
+  const lembaga = await enrichedList();
+  listCache = { lembaga, at: Date.now() };
   res.json({ lembaga });
 });
 
@@ -79,6 +93,7 @@ router.post('/', (req: Request, res: Response) => {
   };
 
   lembagaStore.add(lembaga);
+  listCache = null; // registry changed — next list rebuilds
   return res.status(201).json({ lembaga });
 });
 
@@ -104,6 +119,7 @@ router.patch('/:id/verify', (req: Request, res: Response) => {
   if (!updated) {
     return res.status(404).json({ error: 'Lembaga tidak ditemukan.' });
   }
+  listCache = null; // registry changed — next list rebuilds
   return res.json({ lembaga: updated });
 });
 
