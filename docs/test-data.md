@@ -13,6 +13,16 @@
 
 Keduanya valid sebagai "Alamat Amil (tujuan)" di `/dashboard`.
 
+### Lembaga terkenal (data uji)
+
+`npm run demo:lembaga` (di folder `backend/`) menambahkan 6 lembaga resmi
+Indonesia ke registry sebagai data uji: **BAZNAS RI, Dompet Dhuafa, Rumah
+Zakat, LAZISMU, NU CARE-LAZISNU, IZI** — masing-masing dengan akun testnet
+baru yang didanai + trustline USDC, ditandai terverifikasi. Alamatnya
+digenerate per mesin (lihat `backend/lembaga-test.keypair.json`, gitignored)
+dan **bukan akun resmi lembaga** — deskripsinya pun mencantumkan disclaimer.
+Restart backend setelah menjalankannya.
+
 ## 2. Alamat penerima distribusi (Mustahiq) — untuk form `/amil`
 
 Semua sudah didanai dan punya trustline USDC:

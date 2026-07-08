@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "demo:setup": "ts-node scripts/setup-demo.ts",
     "demo:fund": "ts-node scripts/setup-demo.ts --fund-only",
+    "demo:lembaga": "ts-node scripts/seed-lembaga.ts",
     "test": "vitest run"
   },
   "keywords": ["stellar", "zakat", "blockchain", "usdc", "indonesia"],
