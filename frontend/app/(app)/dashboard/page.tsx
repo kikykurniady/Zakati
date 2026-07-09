@@ -11,6 +11,7 @@ import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useZakatPayment } from '@/hooks/useZakatPayment';
 import { api } from '@/lib/api';
 import {
+  CUSTOM_NIAT,
   CUSTOM_ZAKAT_TYPE_ID,
   ZAKAT_TYPES,
   memoForZakatType,
@@ -31,9 +32,13 @@ function DashboardContent() {
   const [asset, setAsset] = useState<'XLM' | 'USDC'>('USDC');
   const [zakatTypeId, setZakatTypeId] = useState(ZAKAT_TYPES[0].id);
   const [customMemo, setCustomMemo] = useState('');
+  // Niat (intention) is a rukun of zakat — the muzakki must affirm it before
+  // paying. Re-required whenever the payment type changes.
+  const [niatConfirmed, setNiatConfirmed] = useState(false);
 
   const selectedType = ZAKAT_TYPES.find((t) => t.id === zakatTypeId) ?? null;
   const memo = selectedType ? memoForZakatType(selectedType) : customMemo;
+  const niatText = selectedType?.niat ?? CUSTOM_NIAT;
   const [lembaga, setLembaga] = useState<LembagaAmil[]>([]);
   const [selectedLembaga, setSelectedLembaga] = useState('');
 
@@ -196,7 +201,10 @@ function DashboardContent() {
                   <select
                     className="select"
                     value={zakatTypeId}
-                    onChange={(e) => setZakatTypeId(e.target.value)}
+                    onChange={(e) => {
+                      setZakatTypeId(e.target.value);
+                      setNiatConfirmed(false);
+                    }}
                   >
                     {ZAKAT_TYPES.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -232,6 +240,27 @@ function DashboardContent() {
                   <span className="mono">~0.00001 XLM</span>
                 </div>
 
+                <label
+                  className="alert"
+                  style={{
+                    background: 'var(--panel-2)',
+                    display: 'flex',
+                    gap: 10,
+                    alignItems: 'flex-start',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={niatConfirmed}
+                    onChange={(e) => setNiatConfirmed(e.target.checked)}
+                    style={{ marginTop: 3 }}
+                  />
+                  <span style={{ fontSize: 14 }}>
+                    <b>Niat.</b> {niatText}
+                  </span>
+                </label>
+
                 {error && <div className="alert alert-error">{error}</div>}
                 {status === 'success' && txHash && (
                   <div className="alert alert-success">
@@ -246,6 +275,7 @@ function DashboardContent() {
                   className="btn btn-primary btn-block"
                   type="submit"
                   disabled={
+                    !niatConfirmed ||
                     status === 'building' ||
                     status === 'signing' ||
                     status === 'submitting'
@@ -264,7 +294,10 @@ function DashboardContent() {
                     type="button"
                     className="btn btn-block"
                     style={{ marginTop: 8 }}
-                    onClick={reset}
+                    onClick={() => {
+                      reset();
+                      setNiatConfirmed(false);
+                    }}
                   >
                     Kirim Lagi
                   </button>

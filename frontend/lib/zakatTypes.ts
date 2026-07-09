@@ -14,6 +14,8 @@ export interface ZakatType {
   description: string;
   /** Memo code without the year suffix, e.g. "ZAKAT-MAL-PROFESI". */
   memoPrefix: string;
+  /** Intention (niat) statement the muzakki affirms before paying. */
+  niat: string;
 }
 
 export const ZAKAT_TYPES: readonly ZakatType[] = [
@@ -22,50 +24,62 @@ export const ZAKAT_TYPES: readonly ZakatType[] = [
     label: 'Zakat Fitrah',
     description: 'Zakat wajib per jiwa, ditunaikan sebelum shalat Idul Fitri.',
     memoPrefix: 'ZAKAT-FITRAH',
+    niat: 'Saya berniat menunaikan zakat fitrah untuk diri dan tanggungan saya karena Allah Ta’ala.',
   },
   {
     id: 'maal-profesi',
     label: 'Zakat Maal — Penghasilan',
     description: '2,5% dari penghasilan rutin yang mencapai nisab.',
     memoPrefix: 'ZAKAT-MAL-PROFESI',
+    niat: 'Saya berniat menunaikan zakat penghasilan atas harta saya karena Allah Ta’ala.',
   },
   {
     id: 'maal-emas',
     label: 'Zakat Maal — Emas & Perak',
     description: '2,5% dari nilai emas/perak ≥ nisab (85 gr emas), haul 1 tahun.',
     memoPrefix: 'ZAKAT-MAL-EMAS',
+    niat: 'Saya berniat menunaikan zakat emas dan perak atas harta saya karena Allah Ta’ala.',
   },
   {
     id: 'maal-tabungan',
     label: 'Zakat Maal — Tabungan',
     description: '2,5% dari saldo tabungan/deposito ≥ nisab, haul 1 tahun.',
     memoPrefix: 'ZAKAT-MAL-TABUNGAN',
+    niat: 'Saya berniat menunaikan zakat maal atas tabungan saya karena Allah Ta’ala.',
   },
   {
     id: 'maal-dagang',
     label: 'Zakat Maal — Perdagangan',
     description: '2,5% dari aset lancar usaha dikurangi hutang jangka pendek.',
     memoPrefix: 'ZAKAT-MAL-DAGANG',
+    niat: 'Saya berniat menunaikan zakat perdagangan atas harta usaha saya karena Allah Ta’ala.',
   },
   {
     id: 'maal-saham',
     label: 'Zakat Maal — Saham & Investasi',
     description: '2,5% dari nilai atau keuntungan portofolio investasi.',
     memoPrefix: 'ZAKAT-MAL-SAHAM',
+    niat: 'Saya berniat menunaikan zakat atas investasi dan saham saya karena Allah Ta’ala.',
   },
   {
     id: 'infaq',
     label: 'Infaq',
     description: 'Pemberian sukarela untuk kepentingan umum.',
     memoPrefix: 'INFAQ-UMUM',
+    niat: 'Saya berniat berinfaq di jalan Allah dengan harta ini.',
   },
   {
     id: 'sedekah',
     label: 'Sedekah',
     description: 'Pemberian sukarela kepada siapa pun yang membutuhkan.',
     memoPrefix: 'SEDEKAH-UMUM',
+    niat: 'Saya berniat bersedekah karena Allah Ta’ala.',
   },
 ] as const;
+
+/** Generic intention statement for a free-text (custom) payment. */
+export const CUSTOM_NIAT =
+  'Saya berniat menunaikan pembayaran ini karena Allah Ta’ala.';
 
 /** Sentinel id for the free-text memo option in selectors. */
 export const CUSTOM_ZAKAT_TYPE_ID = 'custom';

@@ -66,6 +66,17 @@ export default function AmilPage() {
     asnafIssues.find((iss) => iss.index === rowIndex);
   const senderIssue = issues?.find((iss) => iss.index === -1);
 
+  // Hak amil: the amil's own share of zakat is capped at 1/8 (12.5%). Sum the
+  // portion allocated to AMIL-asnaf recipients and flag when it exceeds that.
+  const MAX_AMIL_SHARE = 0.125;
+  const totalAmount = rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  const amilAmount = rows
+    .filter((r) => r.asnaf === 'AMIL')
+    .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  const amilPercent = totalAmount > 0 ? (amilAmount / totalAmount) * 100 : 0;
+  const amilShareExceeded =
+    fundKind === 'zakat' && amilAmount > totalAmount * MAX_AMIL_SHARE;
+
   const buildInput = (): BatchDistributionInput => ({
     senderAddress: publicKey ?? '',
     recipients: rows.map((r) => ({ address: r.address, amount: r.amount, name: r.name })),
@@ -95,6 +106,8 @@ export default function AmilPage() {
         setAsnafIssues(missing);
         return;
       }
+      // Enforce the 1/8 hak-amil cap (the banner above explains the overage).
+      if (amilShareExceeded) return;
     }
     setAsnafIssues([]);
 
@@ -217,6 +230,24 @@ export default function AmilPage() {
                 + Tambah Penerima
               </button>
             </div>
+
+            {fundKind === 'zakat' && amilAmount > 0 && (
+              <div
+                className={`alert ${amilShareExceeded ? 'alert-warn' : ''}`}
+                style={
+                  amilShareExceeded
+                    ? { marginTop: 16 }
+                    : { background: 'var(--panel-2)', marginTop: 16 }
+                }
+              >
+                Porsi amil: <b>{amilPercent.toFixed(1)}%</b> dari total (batas ~12,5%).
+                {amilShareExceeded && (
+                  <div className="muted" style={{ marginTop: 4 }}>
+                    Melebihi batas hak amil 1/8. Kurangi porsi bagian amil.
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
               <button className="btn" type="button" onClick={() => void onPreview()}>
