@@ -2,12 +2,19 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Nav } from '@/components/Nav';
+import { BuktiSetor } from '@/components/BuktiSetor';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
+import { RiwayatZakat } from '@/components/RiwayatZakat';
 import { useFreighter } from '@/hooks/useFreighter';
+import { useHarga, usdcToIdrLabel } from '@/hooks/useHarga';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useZakatPayment } from '@/hooks/useZakatPayment';
 import { api } from '@/lib/api';
+import {
+  CUSTOM_ZAKAT_TYPE_ID,
+  ZAKAT_TYPES,
+  memoForZakatType,
+} from '@/lib/zakatTypes';
 import type { LembagaAmil } from '@/types';
 
 /** Muzakki dashboard: balances + pay zakat. */
@@ -17,11 +24,16 @@ function DashboardContent() {
   const { account, addUSDCTrustline } = useStellarAccount(publicKey);
   const { sendZakat, status, error, txHash, explorerUrl, reset } =
     useZakatPayment();
+  const { kursUsdIdr, live: kursLive } = useHarga();
 
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [asset, setAsset] = useState<'XLM' | 'USDC'>('USDC');
-  const [memo, setMemo] = useState('ZAKAT-MAL-2024');
+  const [zakatTypeId, setZakatTypeId] = useState(ZAKAT_TYPES[0].id);
+  const [customMemo, setCustomMemo] = useState('');
+
+  const selectedType = ZAKAT_TYPES.find((t) => t.id === zakatTypeId) ?? null;
+  const memo = selectedType ? memoForZakatType(selectedType) : customMemo;
   const [lembaga, setLembaga] = useState<LembagaAmil[]>([]);
   const [selectedLembaga, setSelectedLembaga] = useState('');
 
@@ -31,6 +43,19 @@ function DashboardContent() {
   useEffect(() => {
     if (prefillTo) setToAddress(prefillTo);
   }, [prefillTo]);
+
+  // Prefill type + amount when arriving from the zakat calculator.
+  const prefillJenis = searchParams.get('jenis');
+  const prefillAmount = searchParams.get('amount');
+  useEffect(() => {
+    if (prefillJenis && ZAKAT_TYPES.some((t) => t.id === prefillJenis)) {
+      setZakatTypeId(prefillJenis);
+    }
+    if (prefillAmount && Number(prefillAmount) > 0) {
+      setAmount(prefillAmount);
+      setAsset('USDC');
+    }
+  }, [prefillJenis, prefillAmount]);
 
   // Load institutions for the inline selector.
   useEffect(() => {
@@ -60,7 +85,6 @@ function DashboardContent() {
 
   return (
     <>
-      <Nav />
       <main className="container" style={{ padding: '56px 24px 80px' }}>
         <div className="eyebrow">DASHBOARD MUZAKKI</div>
         <h2 className="section" style={{ marginTop: 10, marginBottom: 28 }}>
@@ -68,7 +92,7 @@ function DashboardContent() {
         </h2>
 
         {!isConnected ? (
-          <ConnectWalletCard message="Hubungkan wallet Freighter untuk memulai." />
+          <ConnectWalletCard message="Hubungkan wallet Stellar Anda untuk memulai." />
         ) : (
           <div className="grid grid-2">
             <div className="card card-glass">
@@ -149,6 +173,12 @@ function DashboardContent() {
                     onChange={(e) => setAmount(e.target.value)}
                     required
                   />
+                  {asset === 'USDC' && usdcToIdrLabel(amount, kursUsdIdr) && (
+                    <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+                      {usdcToIdrLabel(amount, kursUsdIdr)}
+                      {kursLive ? ' (kurs real-time)' : ' (kurs perkiraan)'}
+                    </div>
+                  )}
                 </div>
                 <div className="field">
                   <label>Aset</label>
@@ -162,13 +192,36 @@ function DashboardContent() {
                   </select>
                 </div>
                 <div className="field">
-                  <label>Memo (jenis zakat)</label>
-                  <input
-                    className="input"
-                    value={memo}
-                    onChange={(e) => setMemo(e.target.value)}
-                    maxLength={28}
-                  />
+                  <label>Jenis pembayaran</label>
+                  <select
+                    className="select"
+                    value={zakatTypeId}
+                    onChange={(e) => setZakatTypeId(e.target.value)}
+                  >
+                    {ZAKAT_TYPES.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                    <option value={CUSTOM_ZAKAT_TYPE_ID}>Lainnya (memo bebas)</option>
+                  </select>
+                  {selectedType ? (
+                    <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+                      {selectedType.description}
+                      <br />
+                      Memo on-chain: <span className="mono">{memo}</span>
+                    </div>
+                  ) : (
+                    <input
+                      className="input"
+                      style={{ marginTop: 8 }}
+                      value={customMemo}
+                      onChange={(e) => setCustomMemo(e.target.value)}
+                      placeholder="Memo (maks. 28 byte)"
+                      maxLength={28}
+                      required
+                    />
+                  )}
                 </div>
 
                 <div
@@ -220,6 +273,29 @@ function DashboardContent() {
             </div>
           </div>
         )}
+
+        {status === 'success' && txHash && publicKey && (
+          <BuktiSetor
+            data={{
+              txHash,
+              explorerUrl: explorerUrl ?? '#',
+              dari: publicKey,
+              kepada: toAddress,
+              namaLembaga:
+                lembaga.find((l) => l.stellarAddress === toAddress)?.name ??
+                prefillName ??
+                undefined,
+              jumlah: amount,
+              aset: asset,
+              jenisLabel: selectedType?.label ?? 'Lainnya',
+              memo,
+              tanggal: new Date(),
+              kursUsdIdr,
+            }}
+          />
+        )}
+
+        {isConnected && publicKey && <RiwayatZakat publicKey={publicKey} />}
       </main>
     </>
   );

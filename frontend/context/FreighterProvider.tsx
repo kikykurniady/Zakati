@@ -11,22 +11,66 @@ import {
 } from 'react';
 import type { Transaction } from '@stellar/stellar-sdk';
 import { submitTransaction } from '@/lib/stellar/transactions';
+import { NETWORK_PASSPHRASE, STELLAR_NETWORK } from '@/lib/stellar/config';
 import {
   WalletNotConnectedError,
-  WalletNotInstalledError,
   NetworkMismatchError,
   getErrorMessage,
 } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 
-const CONTEXT = 'context/FreighterProvider';
+const CONTEXT = 'context/WalletProvider';
 const LS_CONNECTED_KEY = 'zakati_wallet_connected';
+const LS_WALLET_ID_KEY = 'zakati_wallet_id';
 
-type FreighterApi = typeof import('@stellar/freighter-api');
+type StellarWalletsKit =
+  typeof import('@creit.tech/stellar-wallets-kit')['StellarWalletsKit'];
 
-/** Lazily import Freighter only on the client to avoid SSR crashes. */
-async function loadFreighter(): Promise<FreighterApi> {
-  return import('@stellar/freighter-api');
+/**
+ * Lazily construct and initialise the Stellar Wallets Kit exactly once, on the
+ * client. The kit renders web components that touch `window`/`document`, so it
+ * must never be imported during SSR — every access goes through this promise.
+ *
+ * Modules enabled: Freighter, xBull, Albedo, Rabet, Lobstr, Hana. xBull and
+ * Albedo are web-based, so they work in mobile browsers where extension-only
+ * wallets like Freighter cannot run.
+ */
+let kitPromise: Promise<StellarWalletsKit> | null = null;
+
+async function getKit(): Promise<StellarWalletsKit> {
+  if (typeof window === 'undefined') {
+    throw new Error('Wallet hanya tersedia di browser.');
+  }
+  if (!kitPromise) {
+    kitPromise = (async () => {
+      const [{ StellarWalletsKit, Networks }, freighter, xbull, albedo, rabet, lobstr, hana] =
+        await Promise.all([
+          import('@creit.tech/stellar-wallets-kit'),
+          import('@creit.tech/stellar-wallets-kit/modules/freighter'),
+          import('@creit.tech/stellar-wallets-kit/modules/xbull'),
+          import('@creit.tech/stellar-wallets-kit/modules/albedo'),
+          import('@creit.tech/stellar-wallets-kit/modules/rabet'),
+          import('@creit.tech/stellar-wallets-kit/modules/lobstr'),
+          import('@creit.tech/stellar-wallets-kit/modules/hana'),
+        ]);
+
+      StellarWalletsKit.init({
+        network: STELLAR_NETWORK === 'PUBLIC' ? Networks.PUBLIC : Networks.TESTNET,
+        selectedWalletId: localStorage.getItem(LS_WALLET_ID_KEY) ?? undefined,
+        modules: [
+          new freighter.FreighterModule(),
+          new xbull.xBullModule(),
+          new albedo.AlbedoModule(),
+          new rabet.RabetModule(),
+          new lobstr.LobstrModule(),
+          new hana.HanaModule(),
+        ],
+      });
+
+      return StellarWalletsKit;
+    })();
+  }
+  return kitPromise;
 }
 
 export interface UseFreighterReturn {
@@ -34,8 +78,9 @@ export interface UseFreighterReturn {
   publicKey: string | null;
   isLoading: boolean;
   error: string | null;
-  isFreighterInstalled: boolean;
   network: 'TESTNET' | 'PUBLIC' | null;
+  /** Wallet id of the connected module, e.g. "freighter" | "albedo". */
+  walletId: string | null;
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   signTransaction: (xdr: string) => Promise<string>;
@@ -48,45 +93,41 @@ export interface UseFreighterReturn {
  * The single source of truth for wallet state. Instantiated exactly once by
  * {@link FreighterProvider}; every component reads it via {@link useFreighter}.
  *
- * Previously this lived in a hook that each component called independently,
- * which produced divergent connection state across the tree (a connect in one
- * component was invisible to the payment/distribution hooks until a reload).
+ * Backed by the Stellar Wallets Kit, so the user picks from any supported
+ * wallet (Freighter, xBull, Albedo, Rabet, Lobstr, Hana) via the kit's modal —
+ * including web wallets that run on mobile browsers.
  */
 function useFreighterState(): UseFreighterReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isFreighterInstalled, setIsFreighterInstalled] = useState(false);
   const [network, setNetwork] = useState<'TESTNET' | 'PUBLIC' | null>(null);
+  const [walletId, setWalletId] = useState<string | null>(null);
 
-  const freighterRef = useRef<FreighterApi | null>(null);
+  const didInit = useRef(false);
 
-  /** Check install status on mount (client only). */
+  /** Restore a previous session on mount (client only). */
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || didInit.current) return;
+    didInit.current = true;
+
+    if (localStorage.getItem(LS_CONNECTED_KEY) !== '1') return;
 
     let cancelled = false;
     (async () => {
       try {
-        const api = await loadFreighter();
-        freighterRef.current = api;
-        const installed = await api.isConnected();
-        if (!cancelled) setIsFreighterInstalled(installed.isConnected);
-
-        // Auto-reconnect if the user previously connected.
-        if (installed.isConnected && localStorage.getItem(LS_CONNECTED_KEY) === '1') {
-          const addrResult = await api.getAddress();
-          if (!cancelled && !addrResult.error && addrResult.address) {
-            const netResult = await api.getNetwork();
-            const net = netResult.network?.toUpperCase() as 'TESTNET' | 'PUBLIC' | null;
-            setPublicKey(addrResult.address);
-            setNetwork(net ?? null);
-            setIsConnected(true);
-          }
+        const kit = await getKit();
+        const { address } = await kit.getAddress();
+        if (!cancelled && address) {
+          setPublicKey(address);
+          setNetwork(STELLAR_NETWORK);
+          setWalletId(localStorage.getItem(LS_WALLET_ID_KEY));
+          setIsConnected(true);
         }
       } catch (err) {
-        logger.warn(CONTEXT, 'init check failed', err);
+        // e.g. Freighter permission not (re)granted — stay disconnected quietly.
+        logger.warn(CONTEXT, 'auto-reconnect failed', err);
       }
     })();
     return () => { cancelled = true; };
@@ -98,27 +139,32 @@ function useFreighterState(): UseFreighterReturn {
     setError(null);
 
     try {
-      const api = freighterRef.current ?? await loadFreighter();
-      freighterRef.current = api;
+      const kit = await getKit();
+      // Opens the wallet-picker modal, sets the chosen module active, and
+      // returns the address. Throws if the user closes it without choosing.
+      const { address } = await kit.authModal();
+      if (!address) throw new Error('Tidak mendapatkan alamat dari wallet.');
 
-      const installedResult = await api.isConnected();
-      if (!installedResult.isConnected) throw new WalletNotInstalledError();
-
-      const accessResult = await api.requestAccess();
-      if (accessResult.error || !accessResult.address) {
-        throw new Error('Tidak bisa mendapatkan alamat dari Freighter.');
+      // Reject a wallet locked to the wrong network when it exposes one.
+      try {
+        const net = await kit.getNetwork();
+        if (net.networkPassphrase && net.networkPassphrase !== NETWORK_PASSPHRASE) {
+          throw new NetworkMismatchError();
+        }
+      } catch (err) {
+        if (err instanceof NetworkMismatchError) throw err;
+        // Some wallets (e.g. Albedo) sign per-request and don't expose a
+        // persistent network; don't block on an unreadable network.
       }
 
-      const netResult = await api.getNetwork();
-      const net = netResult.network?.toUpperCase() as 'TESTNET' | 'PUBLIC' | undefined;
-      if (net !== 'TESTNET') throw new NetworkMismatchError();
-
-      setPublicKey(accessResult.address);
-      setNetwork('TESTNET');
+      const id = kit.selectedModule.productId;
+      setPublicKey(address);
+      setNetwork(STELLAR_NETWORK);
+      setWalletId(id);
       setIsConnected(true);
-      setIsFreighterInstalled(true);
       localStorage.setItem(LS_CONNECTED_KEY, '1');
-      logger.info(CONTEXT, `Connected: ${accessResult.address.slice(0, 8)}…`);
+      localStorage.setItem(LS_WALLET_ID_KEY, id);
+      logger.info(CONTEXT, `Connected ${id}: ${address.slice(0, 8)}…`);
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);
@@ -132,31 +178,41 @@ function useFreighterState(): UseFreighterReturn {
     setIsConnected(false);
     setPublicKey(null);
     setNetwork(null);
+    setWalletId(null);
     setError(null);
-    if (typeof window !== 'undefined') localStorage.removeItem(LS_CONNECTED_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(LS_CONNECTED_KEY);
+      localStorage.removeItem(LS_WALLET_ID_KEY);
+      void getKit()
+        .then((kit) => kit.disconnect())
+        .catch((err) => logger.warn(CONTEXT, 'kit disconnect failed', err));
+    }
     logger.info(CONTEXT, 'Disconnected wallet');
   }, []);
 
-  const signTransaction = useCallback(async (xdr: string): Promise<string> => {
-    if (!isConnected || !publicKey) throw new WalletNotConnectedError();
-    setIsLoading(true);
-    setError(null);
+  const signTransaction = useCallback(
+    async (xdr: string): Promise<string> => {
+      if (!isConnected || !publicKey) throw new WalletNotConnectedError();
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const api = freighterRef.current ?? await loadFreighter();
-      const result = await api.signTransaction(xdr, {
-        networkPassphrase: (await api.getNetwork()).networkPassphrase ?? '',
-      });
-      if (result.error) throw new Error(result.error);
-      return result.signedTxXdr;
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isConnected, publicKey]);
+      try {
+        const kit = await getKit();
+        const { signedTxXdr } = await kit.signTransaction(xdr, {
+          address: publicKey,
+          networkPassphrase: NETWORK_PASSPHRASE,
+        });
+        return signedTxXdr;
+      } catch (err) {
+        const msg = getErrorMessage(err);
+        setError(msg);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isConnected, publicKey],
+  );
 
   const signAndSubmit = useCallback(
     async (
@@ -173,8 +229,8 @@ function useFreighterState(): UseFreighterReturn {
     publicKey,
     isLoading,
     error,
-    isFreighterInstalled,
     network,
+    walletId,
     connectWallet,
     disconnectWallet,
     signTransaction,

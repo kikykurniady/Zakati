@@ -10,7 +10,7 @@ import { useFreighter } from '@/hooks/useFreighter';
  * a failed connect looked like the button doing nothing.
  */
 export function ConnectWalletCard({ message }: { message: string }) {
-  const { connectWallet, isLoading, error, isFreighterInstalled } = useFreighter();
+  const { connectWallet, isLoading, error } = useFreighter();
 
   return (
     <div className="card card-glass" style={{ textAlign: 'center', padding: 48 }}>
@@ -33,16 +33,9 @@ export function ConnectWalletCard({ message }: { message: string }) {
       </button>
 
       <p className="muted" style={{ fontSize: 13, marginTop: 14 }}>
-        {!isFreighterInstalled && (
-          <>
-            Belum ada Freighter?{' '}
-            <a href="https://www.freighter.app/" target="_blank" rel="noreferrer">
-              Install ↗
-            </a>
-            {' · '}
-          </>
-        )}
-        Pastikan jaringan Freighter diatur ke <b>Test Net</b>.
+        Pilih wallet favorit Anda — Freighter, xBull, Albedo, Rabet, Lobstr, atau
+        Hana. xBull dan Albedo berbasis web sehingga bisa dipakai di browser HP.
+        Pastikan wallet diatur ke <b>Stellar Testnet</b>.
       </p>
     </div>
   );

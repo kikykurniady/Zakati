@@ -12,10 +12,10 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
@@ -30,10 +30,10 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -41,6 +41,8 @@ jobs:
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint
+      - name: Test
+        run: npm test
 
   contracts:
     runs-on: ubuntu-latest
@@ -48,6 +50,6 @@ jobs:
       run:
         working-directory: contracts/zakat-escrow
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Test Soroban contract
         run: cargo test

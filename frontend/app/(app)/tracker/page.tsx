@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Nav } from '@/components/Nav';
 import { api, type TrackerResponse } from '@/lib/api';
 import { getAccountExplorerUrl } from '@/lib/stellar/config';
 
@@ -53,7 +52,6 @@ export default function TrackerPage() {
 
   return (
     <>
-      <Nav />
       <main className="container" style={{ padding: '56px 24px 80px' }}>
         <span className="badge-live">
           <span className="dot" /> Verified on Stellar
