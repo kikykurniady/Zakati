@@ -11,6 +11,7 @@ import { CORS_ORIGINS, IS_DEV, PORT } from './config';
 import { logger } from './lib/logger';
 import hargaRouter from './routes/harga';
 import lembagaRouter from './routes/lembaga';
+import mustahiqRouter from './routes/mustahiq';
 import trackerRouter from './routes/tracker';
 import verifyRouter from './routes/verify';
 import zakatRouter from './routes/zakat';
@@ -42,6 +43,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.use('/api/harga', hargaRouter);
 app.use('/api/lembaga', lembagaRouter);
+app.use('/api/mustahiq', mustahiqRouter);
 app.use('/api/tracker', trackerRouter);
 app.use('/api/verify', verifyRouter);
 app.use('/api/zakat', zakatRouter);

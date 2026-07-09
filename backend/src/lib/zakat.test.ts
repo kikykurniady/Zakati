@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   aggregateFlowsByAsset,
+  categoryFromMemo,
   flowForAsset,
   isZakatiMemo,
+  summarizeByCategory,
   truncateMemoToBytes,
 } from './zakat';
 import type { ZakatTransaction } from '../types';
@@ -103,5 +105,70 @@ describe('aggregateFlowsByAsset', () => {
       keluar: '0.0000000',
       saldo: '0.0000000',
     });
+  });
+});
+
+describe('categoryFromMemo', () => {
+  it('classifies memos by prefix into fund categories', () => {
+    expect(categoryFromMemo('ZAKAT-MAL-EMAS-2026')).toBe('zakat');
+    expect(categoryFromMemo('ZAKATI-DIST-0')).toBe('zakat');
+    expect(categoryFromMemo('INFAQ-UMUM-2026')).toBe('infaq');
+    expect(categoryFromMemo('SEDEKAH-UMUM')).toBe('sedekah');
+  });
+
+  it('is case-insensitive', () => {
+    expect(categoryFromMemo('zakat-fitrah')).toBe('zakat');
+  });
+
+  it('falls back to "lainnya" for unknown or empty memos', () => {
+    expect(categoryFromMemo('PAYMENT-123')).toBe('lainnya');
+    expect(categoryFromMemo('')).toBe('lainnya');
+    expect(categoryFromMemo(null)).toBe('lainnya');
+  });
+});
+
+describe('summarizeByCategory', () => {
+  const ADDR = 'GME';
+
+  it('keeps zakat, infaq, and sedekah inflows separate', () => {
+    const flows = summarizeByCategory(
+      [
+        tx({ to: ADDR, amount: '100', memo: 'ZAKAT-MAL-EMAS-2026' }),
+        tx({ to: ADDR, amount: '30', memo: 'INFAQ-UMUM-2026' }),
+        tx({ to: ADDR, amount: '20', memo: 'SEDEKAH-UMUM' }),
+      ],
+      ADDR,
+    );
+    const byCat = Object.fromEntries(flows.map((f) => [f.category, f.masuk]));
+    expect(byCat.zakat).toBe('100.0000000');
+    expect(byCat.infaq).toBe('30.0000000');
+    expect(byCat.sedekah).toBe('20.0000000');
+  });
+
+  it('attributes distribution memos to the zakat bucket as outflow', () => {
+    const flows = summarizeByCategory(
+      [
+        tx({ to: ADDR, amount: '100', memo: 'ZAKAT-MAL-2026' }),
+        tx({ from: ADDR, to: 'GX', amount: '40', memo: 'ZAKATI-DIST-0' }),
+      ],
+      ADDR,
+    );
+    const zakat = flows.find((f) => f.category === 'zakat')!;
+    expect(zakat.masuk).toBe('100.0000000');
+    expect(zakat.keluar).toBe('40.0000000');
+    expect(zakat.saldo).toBe('60.0000000');
+  });
+
+  it('only counts the requested asset and omits empty categories', () => {
+    const flows = summarizeByCategory(
+      [
+        tx({ to: ADDR, amount: '100', asset: 'XLM', memo: 'INFAQ-UMUM' }),
+        tx({ to: ADDR, amount: '50', asset: 'USDC', memo: 'ZAKAT-MAL-2026' }),
+      ],
+      ADDR,
+      'USDC',
+    );
+    expect(flows).toHaveLength(1);
+    expect(flows[0].category).toBe('zakat');
   });
 });

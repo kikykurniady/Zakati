@@ -76,6 +76,24 @@ export interface Mustahiq {
 }
 
 /**
+ * A mustahiq registered by an amil, tagged with the asnaf (golongan) that makes
+ * them eligible to receive zakat. Persisted in the mustahiq registry so
+ * distributions can be checked against a syar'i-valid recipient category.
+ */
+export interface MustahiqRegistration {
+  /** Recipient's Stellar address (G...). */
+  stellarAddress: string;
+  /** Asnaf code — one of the eight (see lib/asnaf). */
+  asnaf: string;
+  /** Privacy-masked display name, e.g. "Ahmad S.". */
+  name: string;
+  /** Id of the registering institution, or "" when unaffiliated. */
+  lembagaId: string;
+  /** ISO-8601 timestamp of registration. */
+  verifiedAt: string;
+}
+
+/**
  * A zakat payment (Muzakki → Amil), parsed from Horizon.
  */
 export interface ZakatTransaction {

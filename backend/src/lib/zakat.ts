@@ -18,6 +18,66 @@ export function isZakatiMemo(memo: string | null | undefined): boolean {
   return ZAKATI_MEMO_PREFIXES.some((prefix) => upper.startsWith(prefix));
 }
 
+/** Fund category a transaction belongs to, derived from its memo prefix. */
+export type FundCategory = 'zakat' | 'infaq' | 'sedekah' | 'lainnya';
+
+/**
+ * Classify a transaction by its memo prefix into a fund category.
+ *
+ * Zakat carries far stricter distribution rules (the eight asnaf) than infaq or
+ * sedekah, so transparency reporting keeps the three separate rather than
+ * lumping every inflow into one "terkumpul" figure.
+ */
+export function categoryFromMemo(memo: string | null | undefined): FundCategory {
+  if (!memo) return 'lainnya';
+  const upper = memo.toUpperCase();
+  if (upper.startsWith('ZAKAT')) return 'zakat';
+  if (upper.startsWith('INFAQ')) return 'infaq';
+  if (upper.startsWith('SEDEKAH')) return 'sedekah';
+  return 'lainnya';
+}
+
+/** Inbound/outbound totals for one fund category at a single asset. */
+export interface CategoryFlow {
+  category: FundCategory;
+  masuk: string;
+  keluar: string;
+  saldo: string;
+}
+
+/**
+ * Aggregate inbound/outbound totals **per fund category** for `address`, for a
+ * single `asset` (defaults to USDC — the asset zakat is denominated in).
+ *
+ * Distribution memos ("ZAKATI-DIST-…") classify as zakat, so a lembaga's zakat
+ * outflow is attributed to the zakat bucket rather than left uncategorised.
+ */
+export function summarizeByCategory(
+  records: ZakatTransaction[],
+  address: string,
+  asset = 'USDC',
+): CategoryFlow[] {
+  const order: FundCategory[] = ['zakat', 'infaq', 'sedekah', 'lainnya'];
+  const masuk: Record<FundCategory, number> = { zakat: 0, infaq: 0, sedekah: 0, lainnya: 0 };
+  const keluar: Record<FundCategory, number> = { zakat: 0, infaq: 0, sedekah: 0, lainnya: 0 };
+
+  for (const tx of records) {
+    if (tx.asset !== asset) continue;
+    const category = categoryFromMemo(tx.memo);
+    if (tx.to === address) masuk[category] += Number(tx.amount);
+    if (tx.from === address) keluar[category] += Number(tx.amount);
+  }
+
+  return order
+    .filter((category) => masuk[category] !== 0 || keluar[category] !== 0)
+    .map((category) => ({
+      category,
+      masuk: masuk[category].toFixed(7),
+      keluar: keluar[category].toFixed(7),
+      saldo: (masuk[category] - keluar[category]).toFixed(7),
+    }));
+}
+
 /**
  * Truncate a string so its UTF-8 encoding fits within `maxBytes`, dropping any
  * trailing partial multibyte sequence.
