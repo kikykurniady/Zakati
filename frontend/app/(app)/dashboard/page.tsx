@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { BuktiSetor } from '@/components/BuktiSetor';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { RiwayatZakat } from '@/components/RiwayatZakat';
+import { useAnchorDeposit } from '@/hooks/useAnchorDeposit';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useHarga, usdcToIdrLabel } from '@/hooks/useHarga';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
@@ -22,7 +23,14 @@ import type { LembagaAmil } from '@/types';
 function DashboardContent() {
   const searchParams = useSearchParams();
   const { isConnected, publicKey } = useFreighter();
-  const { account, addUSDCTrustline } = useStellarAccount(publicKey);
+  const { account, addUSDCTrustline, refresh: refreshAccount } =
+    useStellarAccount(publicKey);
+  const {
+    status: depositStatus,
+    error: depositError,
+    interactiveUrl,
+    start: startDeposit,
+  } = useAnchorDeposit(refreshAccount);
   const { sendZakat, status, error, txHash, explorerUrl, reset } =
     useZakatPayment();
   const { kursUsdIdr, live: kursLive } = useHarga();
@@ -128,6 +136,56 @@ function DashboardContent() {
                     Tambahkan USDC Trustline
                   </button>
                 </>
+              )}
+
+              {account?.hasTrustline && (
+                <div style={{ marginTop: 16 }}>
+                  <button
+                    className="btn btn-block"
+                    type="button"
+                    onClick={() => void startDeposit()}
+                    disabled={
+                      depositStatus === 'authenticating' ||
+                      depositStatus === 'starting' ||
+                      depositStatus === 'awaiting_user' ||
+                      depositStatus === 'processing'
+                    }
+                  >
+                    {depositStatus === 'idle' ||
+                    depositStatus === 'completed' ||
+                    depositStatus === 'failed'
+                      ? '↑ Top up saldo (Rupiah → USDC)'
+                      : depositStatus === 'authenticating'
+                        ? 'Menghubungkan ke anchor…'
+                        : depositStatus === 'starting'
+                          ? 'Menyiapkan deposit…'
+                          : depositStatus === 'processing'
+                            ? 'Anchor memproses…'
+                            : 'Selesaikan di jendela anchor…'}
+                  </button>
+                  <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                    Top up via anchor Stellar (SEP-24). Di produksi, slot ini
+                    diisi anchor IDR lokal — muzakki top up dalam Rupiah.
+                  </div>
+                  {depositStatus === 'awaiting_user' && interactiveUrl && (
+                    <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                      Jendela tidak terbuka?{' '}
+                      <a href={interactiveUrl} target="_blank" rel="noreferrer">
+                        Buka halaman anchor ↗
+                      </a>
+                    </div>
+                  )}
+                  {depositStatus === 'completed' && (
+                    <div className="alert alert-success" style={{ marginTop: 8 }}>
+                      Top up selesai — saldo USDC diperbarui.
+                    </div>
+                  )}
+                  {depositError && (
+                    <div className="alert alert-error" style={{ marginTop: 8 }}>
+                      {depositError}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
