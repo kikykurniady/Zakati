@@ -41,9 +41,10 @@ fn full_flow_distributes_only_to_verified_within_balance() {
     assert_eq!(client.balance(&program), 1_000_000);
     assert_eq!(token.balance(&cid), 1_000_000); // escrow holds the funds
 
-    client.verify_mustahiq(&m1);
-    client.verify_mustahiq(&m2);
+    client.verify_mustahiq(&m1, &symbol_short!("FAKIR"));
+    client.verify_mustahiq(&m2, &symbol_short!("MISKIN"));
     assert!(client.is_verified(&m1));
+    assert_eq!(client.mustahiq_asnaf(&m1), Some(symbol_short!("FAKIR")));
 
     let recipients = vec![&env, (m1.clone(), 600_000i128), (m2.clone(), 400_000i128)];
     client.distribute(&program, &recipients);
@@ -67,7 +68,7 @@ fn rejects_distribution_to_unverified_mustahiq() {
 
     client.init(&admin, &tid);
     client.deposit(&muzakki, &1_000_000, &program);
-    client.verify_mustahiq(&m1); // m2 deliberately left unverified
+    client.verify_mustahiq(&m1, &symbol_short!("FAKIR")); // m2 deliberately left unverified
 
     let recipients = vec![&env, (m1.clone(), 100i128), (m2.clone(), 100i128)];
     assert_eq!(
@@ -85,7 +86,7 @@ fn rejects_over_distribution() {
 
     client.init(&admin, &tid);
     client.deposit(&muzakki, &1_000i128, &program);
-    client.verify_mustahiq(&m1);
+    client.verify_mustahiq(&m1, &symbol_short!("FAKIR"));
 
     let recipients = vec![&env, (m1.clone(), 2_000i128)];
     assert_eq!(
@@ -130,10 +131,66 @@ fn distribute_requires_admin_auth() {
 
     client.init(&admin, &tid);
     client.deposit(&muzakki, &1_000i128, &program);
-    client.verify_mustahiq(&m1);
+    client.verify_mustahiq(&m1, &symbol_short!("FAKIR"));
 
     // Clear all mocked auths: require_auth(admin) now has nothing to satisfy it.
     env.set_auths(&[]);
     let recipients = vec![&env, (m1.clone(), 100i128)];
     assert!(client.try_distribute(&program, &recipients).is_err());
+}
+
+#[test]
+fn rejects_verification_with_invalid_asnaf() {
+    let env = Env::default();
+    let (cid, tid, admin, _mu, m1, _m2) = setup(&env);
+    let client = ZakatEscrowClient::new(&env, &cid);
+
+    client.init(&admin, &tid);
+    // "KAYA" is not one of the eight asnaf.
+    assert_eq!(
+        client.try_verify_mustahiq(&m1, &symbol_short!("KAYA")),
+        Err(Ok(Error::InvalidAsnaf)),
+    );
+    assert!(!client.is_verified(&m1));
+}
+
+#[test]
+fn non_zakat_program_distributes_to_unverified() {
+    let env = Env::default();
+    let (cid, tid, admin, muzakki, m1, m2) = setup(&env);
+    let client = ZakatEscrowClient::new(&env, &cid);
+    let program = symbol_short!("INFAQ");
+
+    client.init(&admin, &tid);
+    // Mark the program as non-zakat: asnaf verification no longer required.
+    client.set_program_kind(&program, &false);
+    client.deposit(&muzakki, &1_000i128, &program);
+
+    // Neither m1 nor m2 is verified, yet an infaq program may still pay them.
+    let token = token::Client::new(&env, &tid);
+    let recipients = vec![&env, (m1.clone(), 600i128), (m2.clone(), 400i128)];
+    client.distribute(&program, &recipients);
+
+    assert_eq!(token.balance(&m1), 600);
+    assert_eq!(token.balance(&m2), 400);
+    assert_eq!(client.balance(&program), 0);
+}
+
+#[test]
+fn zakat_program_is_the_strict_default() {
+    let env = Env::default();
+    let (cid, tid, admin, muzakki, m1, _m2) = setup(&env);
+    let client = ZakatEscrowClient::new(&env, &cid);
+    let program = symbol_short!("ZAKATMAL");
+
+    client.init(&admin, &tid);
+    client.deposit(&muzakki, &1_000i128, &program);
+    // No set_program_kind call — a program defaults to zakat (asnaf-restricted),
+    // so an unverified recipient is rejected.
+    assert!(client.program_kind(&program));
+    let recipients = vec![&env, (m1.clone(), 100i128)];
+    assert_eq!(
+        client.try_distribute(&program, &recipients),
+        Err(Ok(Error::NotVerified)),
+    );
 }
