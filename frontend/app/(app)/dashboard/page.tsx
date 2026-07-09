@@ -6,6 +6,7 @@ import { BuktiSetor } from '@/components/BuktiSetor';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { RiwayatZakat } from '@/components/RiwayatZakat';
 import { useAnchorDeposit } from '@/hooks/useAnchorDeposit';
+import { useEscrow } from '@/hooks/useEscrow';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useHarga, usdcToIdrLabel } from '@/hooks/useHarga';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
@@ -33,6 +34,7 @@ function DashboardContent() {
   } = useAnchorDeposit(refreshAccount);
   const { sendZakat, status, error, txHash, explorerUrl, reset } =
     useZakatPayment();
+  const escrow = useEscrow();
   const { kursUsdIdr, live: kursLive } = useHarga();
 
   const [toAddress, setToAddress] = useState('');
@@ -347,6 +349,41 @@ function DashboardContent() {
                         ? 'Menunggu tanda tangan…'
                         : 'Mengirim…'}
                 </button>
+                {selectedType && selectedType.id !== 'infaq' && selectedType.id !== 'sedekah' && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-block"
+                      style={{ marginTop: 8 }}
+                      disabled={
+                        !niatConfirmed || !amount || escrow.status === 'working'
+                      }
+                      onClick={() => void escrow.deposit(amount, 'ZAKATMAL')}
+                    >
+                      {escrow.status === 'working'
+                        ? 'Menyetor ke escrow…'
+                        : '⛓ Setor ke Escrow on-chain (terjamin kontrak)'}
+                    </button>
+                    {escrow.status === 'success' && escrow.txHash && (
+                      <div className="alert alert-success" style={{ marginTop: 8 }}>
+                        Tersetor ke escrow.{' '}
+                        <a
+                          href={`https://stellar.expert/explorer/testnet/tx/${escrow.txHash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Lihat ↗
+                        </a>
+                      </div>
+                    )}
+                    {escrow.status === 'failed' && escrow.error && (
+                      <div className="alert alert-error" style={{ marginTop: 8 }}>
+                        {escrow.error}
+                      </div>
+                    )}
+                  </>
+                )}
+
                 {status === 'success' && (
                   <button
                     type="button"

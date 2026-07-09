@@ -3,11 +3,14 @@
 On-chain escrow that **enforces zakat distribution rules**, so transparency is
 guaranteed by the contract instead of an off-chain memo convention.
 
-> **Deployed on Stellar Testnet:**
-> [`CCXQRXVBV7TPQSUFVX2H3FE43JQRPIP4BRHPE257Y3UAGAOIE4AYURJ5`](https://stellar.expert/explorer/testnet/contract/CCXQRXVBV7TPQSUFVX2H3FE43JQRPIP4BRHPE257Y3UAGAOIE4AYURJ5)
-> — deposit/verify/distribute exercised end-to-end; see `docs/soroban-escrow-poc.md`.
-> Note: this instance predates asnaf enforcement (`verify_mustahiq(addr)` with no
-> category) and must be **redeployed** to pick up the changes below.
+> **Deployed on Stellar Testnet (asnaf-enforced):**
+> [`CDXAY72KKR5ZUF2QSCX3IP7MB73GHSB3CQFZ5GAUQHD5LC7R45AGORIG`](https://stellar.expert/explorer/testnet/contract/CDXAY72KKR5ZUF2QSCX3IP7MB73GHSB3CQFZ5GAUQHD5LC7R45AGORIG)
+> holding an IDR token
+> [`CCSGSYYEN2LDNLOITGFI5QERSEV2ATR6FSFMALSUCHQ4NLAAC4VSTJSE`](https://stellar.expert/explorer/testnet/contract/CCSGSYYEN2LDNLOITGFI5QERSEV2ATR6FSFMALSUCHQ4NLAAC4VSTJSE).
+> Exercised end-to-end: `init` → `verify_mustahiq(FAKIR)` → `deposit` → `distribute`
+> succeeded, and `distribute` to an **unverified** address reverted with
+> `Error(Contract, #4)` (NotVerified) — asnaf enforcement confirmed on-chain.
+> (Prior instance `CCXQRXVB…` predated asnaf and is superseded.)
 
 Funds are held in a named program's escrow and can only leave under contract
 rules. Amounts are an IDR token (any SEP-41 / Stellar Asset Contract; integer

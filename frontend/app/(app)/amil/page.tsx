@@ -4,9 +4,13 @@ import { useState } from 'react';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
 import { useBatchDistribution } from '@/hooks/useBatchDistribution';
+import { useEscrow } from '@/hooks/useEscrow';
 import { ASNAF } from '@/lib/asnaf';
 import { api } from '@/lib/api';
 import type { BatchDistributionInput } from '@/types';
+
+/** Escrow program symbol distributions are booked against. */
+const ESCROW_PROGRAM = 'ZAKATMAL';
 
 interface RecipientRow {
   address: string;
@@ -26,8 +30,12 @@ export default function AmilPage() {
   const { isConnected, publicKey } = useFreighter();
   const { distribute, preview, reset, status, progress, results, issues, error } =
     useBatchDistribution();
+  const escrow = useEscrow();
 
   const [fundKind, setFundKind] = useState<FundKind>('zakat');
+  // On-chain mode: verify + distribute through the Soroban escrow (asnaf
+  // enforced by the contract) instead of direct Horizon payments.
+  const [escrowMode, setEscrowMode] = useState(false);
   const [rows, setRows] = useState<RecipientRow[]>([{ ...EMPTY_ROW }]);
   const [asnafIssues, setAsnafIssues] = useState<
     { index: number; reason: string }[]
@@ -129,6 +137,17 @@ export default function AmilPage() {
       );
     }
 
+    // On-chain escrow path: the contract verifies asnaf and enforces the payout.
+    if (escrowMode && fundKind === 'zakat') {
+      await escrow.distribute(
+        ESCROW_PROGRAM,
+        rows
+          .filter((r) => r.address && r.amount && r.asnaf)
+          .map((r) => ({ address: r.address, amount: r.amount, asnaf: r.asnaf })),
+      );
+      return;
+    }
+
     await distribute(buildInput());
   };
 
@@ -164,6 +183,30 @@ export default function AmilPage() {
                   : 'Infaq/sedekah bersifat sukarela — tidak dibatasi golongan asnaf.'}
               </div>
             </div>
+
+            {fundKind === 'zakat' && (
+              <label
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  alignItems: 'flex-start',
+                  cursor: 'pointer',
+                  marginBottom: 4,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={escrowMode}
+                  onChange={(e) => setEscrowMode(e.target.checked)}
+                  style={{ marginTop: 3 }}
+                />
+                <span style={{ fontSize: 13 }}>
+                  <b>Distribusi via Escrow on-chain.</b> Kontrak Soroban
+                  memverifikasi asnaf & menegakkan penyaluran (anti-drain, audit
+                  event). Tanpa ini, penyaluran memakai pembayaran Horizon langsung.
+                </span>
+              </label>
+            )}
 
             <div className="label" style={{ marginTop: 20 }}>
               Daftar Penerima (Mustahiq)
@@ -257,9 +300,15 @@ export default function AmilPage() {
                 className="btn btn-primary"
                 type="button"
                 onClick={() => void onDistribute()}
-                disabled={status === 'signing' || status === 'submitting'}
+                disabled={
+                  status === 'signing' ||
+                  status === 'submitting' ||
+                  escrow.status === 'working'
+                }
               >
-                Distribusikan
+                {escrowMode && fundKind === 'zakat'
+                  ? 'Distribusikan (on-chain)'
+                  : 'Distribusikan'}
               </button>
             </div>
 
@@ -304,6 +353,29 @@ export default function AmilPage() {
             )}
 
             {error && <div className="alert alert-error">{error}</div>}
+
+            {escrowMode && escrow.status === 'working' && (
+              <div className="alert" style={{ marginTop: 12 }}>
+                Memproses on-chain lewat escrow (verifikasi asnaf + distribusi)…
+              </div>
+            )}
+            {escrow.status === 'success' && escrow.txHash && (
+              <div className="alert alert-success" style={{ marginTop: 12 }}>
+                Distribusi on-chain selesai.{' '}
+                <a
+                  href={`https://stellar.expert/explorer/testnet/tx/${escrow.txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Lihat di Stellar Expert ↗
+                </a>
+              </div>
+            )}
+            {escrow.status === 'failed' && escrow.error && (
+              <div className="alert alert-error" style={{ marginTop: 12 }}>
+                {escrow.error}
+              </div>
+            )}
 
             {results && (
               <div
