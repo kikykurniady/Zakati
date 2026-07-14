@@ -1,0 +1,11 @@
+# Railway/Nixpacks build config for the Zakati backend.
+#
+# The start command runs `node dist/server.js`, so the TypeScript build MUST
+# run during the build phase. `typescript` is a devDependency, so we force dev
+# deps to install even when NODE_ENV=production (otherwise `tsc` is absent and
+# the build silently skips, leaving dist/ empty).
+[phases.install]
+cmds = ["npm ci --include=dev"]
+
+[phases.build]
+cmds = ["npm run build"]
