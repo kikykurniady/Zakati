@@ -5,6 +5,21 @@ Indonesia. Setiap transaksi zakat, infaq, dan sedekah tercatat on-chain dan
 dapat diverifikasi publik. Tiga peran: **Muzakki** (donatur), **Amil**
 (lembaga pengelola), **Mustahiq** (penerima).
 
+## Live demo & smart contract
+
+- **Live demo:** **[zakati-nine.vercel.app ↗](https://zakati-nine.vercel.app/)**
+- **Jaringan:** Stellar **Testnet**
+
+Kontrak Soroban yang menegakkan aturan penyaluran zakat langsung di on-chain
+(verifikasi 8 asnaf, anti-drain, batas hak amil 1/8, event audit publik):
+
+| Kontrak on-chain | Contract ID | Explorer |
+| --- | --- | --- |
+| **Zakat Escrow** (asnaf-enforced) | `CDXAY72KKR5ZUF2QSCX3IP7MB73GHSB3CQFZ5GAUQHD5LC7R45AGORIG` | [stellar.expert ↗](https://stellar.expert/explorer/testnet/contract/CDXAY72KKR5ZUF2QSCX3IP7MB73GHSB3CQFZ5GAUQHD5LC7R45AGORIG) |
+| **Token IDR** (Stellar Asset Contract) | `CCSGSYYEN2LDNLOITGFI5QERSEV2ATR6FSFMALSUCHQ4NLAAC4VSTJSE` | [stellar.expert ↗](https://stellar.expert/explorer/testnet/contract/CCSGSYYEN2LDNLOITGFI5QERSEV2ATR6FSFMALSUCHQ4NLAAC4VSTJSE) |
+
+Detail kontrak, API, dan invariant: [`contracts/zakat-escrow/`](./contracts/zakat-escrow).
+
 ## Monorepo
 
 | Folder      | Stack                                   | Deskripsi                                              |

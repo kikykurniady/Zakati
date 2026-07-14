@@ -15,6 +15,7 @@ build/
 # stellar demo artifacts (contain secret keys)
 demo-accounts.json
 *.keypair.json
+docs/demo-data.md
 
 # editor / preview local config
 .claude/
