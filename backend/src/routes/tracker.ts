@@ -5,7 +5,7 @@ import { Router, type Request, type Response } from 'express';
 import { fetchPaymentHistory } from '../lib/stellar/history';
 import { validateStellarAddress } from '../lib/stellar/account';
 import { getErrorMessage } from '../lib/errors';
-import { aggregateFlowsByAsset, flowForAsset } from '../lib/zakat';
+import { aggregateFlowsByAsset, flowForAsset, summarizeByCategory } from '../lib/zakat';
 
 const router = Router();
 
@@ -28,12 +28,16 @@ router.get('/:address', async (req: Request, res: Response) => {
     // Headline scalars report USDC (the asset zakat is denominated in); the
     // full per-asset breakdown is in `perAsset`.
     const usdc = flowForAsset(perAsset, 'USDC');
+    // Zakat funds carry stricter distribution rules than infaq/sedekah, so the
+    // USDC flow is also broken out per fund category for transparency.
+    const perCategory = summarizeByCategory(records, address, 'USDC');
 
     return res.json({
       transactions: records,
       nextCursor,
       stats: {
         perAsset,
+        perCategory,
         totalMasuk: usdc.masuk,
         totalKeluar: usdc.keluar,
         saldo: usdc.saldo,

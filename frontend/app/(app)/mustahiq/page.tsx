@@ -3,13 +3,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ConnectWalletCard } from '@/components/ConnectWalletCard';
 import { useFreighter } from '@/hooks/useFreighter';
-import { api, type TrackerResponse } from '@/lib/api';
+import { useStellarAccount } from '@/hooks/useStellarAccount';
+import { api, type MustahiqResponse, type TrackerResponse } from '@/lib/api';
 import { getAccountExplorerUrl } from '@/lib/stellar/config';
 
 /** Mustahiq dashboard: funds received on-chain for the connected wallet. */
 export default function MustahiqPage() {
   const { isConnected, publicKey } = useFreighter();
+  const { account, addUSDCTrustline, refresh: refreshAccount } =
+    useStellarAccount(publicKey);
   const [data, setData] = useState<TrackerResponse | null>(null);
+  const [registration, setRegistration] = useState<MustahiqResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +21,12 @@ export default function MustahiqPage() {
     setLoading(true);
     setError(null);
     try {
-      setData(await api.getTracker(address));
+      const [tracker, mustahiq] = await Promise.all([
+        api.getTracker(address),
+        api.getMustahiq(address),
+      ]);
+      setData(tracker);
+      setRegistration(mustahiq);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat data.');
     } finally {
@@ -29,20 +38,81 @@ export default function MustahiqPage() {
     if (publicKey) void load(publicKey);
   }, [publicKey, load]);
 
+  const onRefresh = () => {
+    if (!publicKey) return;
+    void load(publicKey);
+    void refreshAccount();
+  };
+
+  const onAddTrustline = async () => {
+    try {
+      await addUSDCTrustline();
+    } catch {
+      /* surfaced via useStellarAccount error state */
+    }
+  };
+
   const incoming = data?.transactions.filter((tx) => tx.to === publicKey) ?? [];
 
   return (
     <>
       <main className="container" style={{ padding: '56px 24px 80px' }}>
-        <div className="eyebrow">DASHBOARD MUSTAHIQ</div>
-        <h2 className="section" style={{ marginTop: 10, marginBottom: 28 }}>
-          Dana yang Anda terima
-        </h2>
+        <div className="row" style={{ marginBottom: 28 }}>
+          <div>
+            <div className="eyebrow">DASHBOARD MUSTAHIQ</div>
+            <h2 className="section" style={{ marginTop: 10 }}>
+              Dana yang Anda terima
+            </h2>
+          </div>
+          {isConnected && (
+            <button
+              className="btn"
+              type="button"
+              onClick={onRefresh}
+              disabled={loading}
+            >
+              {loading ? 'Memuat…' : '↻ Segarkan'}
+            </button>
+          )}
+        </div>
 
         {!isConnected ? (
           <ConnectWalletCard message="Hubungkan wallet untuk melihat dana zakat yang Anda terima." />
         ) : (
           <>
+            {account && !account.hasTrustline && (
+              <div className="card" style={{ marginBottom: 24 }}>
+                <div className="alert alert-warn">
+                  Wallet Anda belum punya trustline USDC. Tanpa ini, dana zakat
+                  dalam USDC tidak bisa diterima. Tambahkan dulu.
+                </div>
+                <button
+                  className="btn btn-primary btn-block"
+                  type="button"
+                  onClick={() => void onAddTrustline()}
+                >
+                  Tambahkan USDC Trustline
+                </button>
+              </div>
+            )}
+
+            {registration?.asnaf && (
+              <div className="card" style={{ marginBottom: 24 }}>
+                <div className="label">Status Penerima (Asnaf)</div>
+                <div style={{ marginTop: 8 }}>
+                  <span className="badge-testnet" style={{ marginRight: 8 }}>
+                    {registration.asnaf.label}
+                  </span>
+                  <span className="muted" style={{ fontSize: 13 }}>
+                    {registration.asnaf.deskripsi}
+                  </span>
+                </div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                  Terverifikasi oleh amil sebagai golongan yang berhak menerima zakat.
+                </div>
+              </div>
+            )}
+
             {error && <div className="alert alert-error">{error}</div>}
             {loading && <p className="muted">Memuat…</p>}
 

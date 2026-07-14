@@ -73,7 +73,50 @@ export async function buildAddUSDCTrustline(fromAddress: string): Promise<Transa
     .build();
 }
 
-/** Build batch distribution transactions split into ≤100-operation batches. */
+/** Split recipients into ≤{@link MAX_OPERATIONS_PER_TX}-sized chunks (one per tx). */
+export function chunkRecipients(
+  recipients: BatchDistributionInput['recipients'],
+): BatchDistributionInput['recipients'][] {
+  const batches: BatchDistributionInput['recipients'][] = [];
+  for (let i = 0; i < recipients.length; i += MAX_OPERATIONS_PER_TX) {
+    batches.push(recipients.slice(i, i + MAX_OPERATIONS_PER_TX));
+  }
+  return batches;
+}
+
+/**
+ * Build a *single* distribution batch, loading a fresh account snapshot so the
+ * sequence number is current at build time.
+ *
+ * Building each batch immediately before signing (rather than pre-building the
+ * whole set from one snapshot) means a failed or rejected batch doesn't leave a
+ * sequence gap that would cascade into `tx_bad_seq` on every later batch.
+ */
+export async function buildDistributionBatch(
+  senderAddress: string,
+  recipients: BatchDistributionInput['recipients'],
+  batchIndex: number,
+): Promise<Transaction> {
+  const source = await stellarServer.loadAccount(senderAddress);
+  const builder = new TransactionBuilder(source, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  });
+  for (const r of recipients) {
+    builder.addOperation(
+      Operation.payment({ destination: r.address, asset: USDC_ASSET, amount: r.amount }),
+    );
+  }
+  builder.addMemo(safeMemo(`ZAKATI-DIST-${batchIndex}`));
+  return builder.setTimeout(TIMEOUT).build();
+}
+
+/**
+ * Pre-build every batch from one snapshot. Used by {@link previewData}-style
+ * read-only flows (totals, batch count, fee) — never submit these directly, as
+ * a mid-run failure would create a sequence gap; use {@link buildDistributionBatch}
+ * per submit instead.
+ */
 export async function buildBatchDistribution(params: BatchDistributionInput): Promise<{
   transactions: Transaction[];
   totalAmount: string;
@@ -84,10 +127,7 @@ export async function buildBatchDistribution(params: BatchDistributionInput): Pr
   if (recipients.length === 0) throw new Error('Daftar penerima tidak boleh kosong.');
 
   const source = await stellarServer.loadAccount(senderAddress);
-  const batches: BatchDistributionInput['recipients'][] = [];
-  for (let i = 0; i < recipients.length; i += MAX_OPERATIONS_PER_TX) {
-    batches.push(recipients.slice(i, i + MAX_OPERATIONS_PER_TX));
-  }
+  const batches = chunkRecipients(recipients);
 
   const transactions: Transaction[] = batches.map((batch, index) => {
     const builder = new TransactionBuilder(source, {

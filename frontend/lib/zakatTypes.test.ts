@@ -27,6 +27,14 @@ describe('memoForZakatType', () => {
   });
 });
 
+describe('niat', () => {
+  it('setiap jenis memiliki pernyataan niat non-kosong', () => {
+    for (const t of ZAKAT_TYPES) {
+      expect(t.niat.trim().length, t.id).toBeGreaterThan(0);
+    }
+  });
+});
+
 describe('zakatTypeFromMemo', () => {
   it('me-resolve memo hasil memoForZakatType kembali ke jenis yang sama (round-trip)', () => {
     for (const t of ZAKAT_TYPES) {
